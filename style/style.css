@@ -1,0 +1,134 @@
+body {
+    background: #0ac18e;
+    text-align: left;
+    color: white;
+    width: 25em;
+    margin: 0 auto;
+    padding-right: 20px;
+    font-family: Arial, serif;
+}
+
+button, input, textarea {
+    font-family: Arial, serif;
+    background: #089b72;
+    border: none;
+    color: white;
+    height: 36px;
+    outline: none;
+    padding-left: 8px;
+    padding-right: 6px;
+    max-height: 200px;
+    font-size: 16px;
+    margin: 6px;
+    width: 100%
+}
+
+input[type=checkbox] {
+    accent-color: #089b72;
+}
+
+textarea {
+    resize: vertical;
+    overflow: hidden;
+    min-height: 64px;
+}
+
+@media only screen and (max-device-width: 830px) {
+    body {
+        zoom: 2.2;
+    }
+
+    #body-pay {
+        zoom: 1.6;
+    }
+
+    textarea {
+        height: 72px
+    }
+}
+
+#title-box{
+    color: black;
+    display: inline-block;
+    background-color: white;
+    border-radius: 0.5rem;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+#bch-title {
+    color: #0ac18e;
+}
+
+#message {
+    padding-top: 8px
+}
+
+#submit {
+    background: white;
+    color: black;
+    width: 45%;
+    align-items: right;
+    border-radius: 0.25rem
+}
+
+#submit:hover{
+    background-color: #dfdfdf;
+}
+
+small{
+    color: black;
+    opacity: 1;
+}
+
+::placeholder {
+    color: white;
+    opacity: 1;
+}
+
+label {
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+}
+
+svg, img {
+    height: 75%;
+    vertical-align: middle;
+}
+
+#showAmount {
+    vertical-align: middle;
+    width: 24px;
+}
+
+blockquote {
+    background: #089b72;
+    border: none;
+    color: white;
+    outline: none;
+    font-size: 16px;
+    min-height: 24px;
+    margin: 6px;
+    padding: 7px 14px;
+    width: 100%;
+    word-break: break-all;
+    word-wrap: break-word;
+}
+
+iframe {
+    height: 30px;
+}
+
+label {
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+}
+
+b, a {
+    color: #074c53;
+}
+

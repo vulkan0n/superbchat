@@ -1,0 +1,18 @@
+{
+  "BCHAddress": "bitcoincash:address",
+  "MinimumDonation": 0.001,
+  "MaxMessageChars": 300,
+  "MaxNameChars": 25,
+  "WebViewUsername": "admin",
+  "WebViewPassword": "adminadmin",
+  "OBSWidgetRefresh": "10",
+  "ShowAmountCheckedByDefault": true,
+  "EnableEmail": false,
+  "SMTPServer": "smtp.purelymail.com",
+  "SMTPPort": "587",
+  "SMTPUser": "example@purelymail.com",
+  "SMTPPass": "123456789",
+  "SendToEmail": [
+    "example@purelymail.com"
+  ]
+}
