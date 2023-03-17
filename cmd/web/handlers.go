@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"embed"
 	"encoding/base64"
 	"encoding/csv"
 	"encoding/json"
@@ -10,14 +9,10 @@ import (
 	"html"
 	"log"
 	"net/http"
-	"net/smtp"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
-	"text/template"
-	"time"
-	"unicode/utf8"
 
 	"github.com/skip2/go-qrcode"
 )
@@ -37,39 +32,6 @@ var transactionDetailsMethod = "/tx/data/"
 // example OBS url: https://example.com/alert?auth=adminadmin
 var password = "adminadmin"
 var checked = ""
-
-// Email settings
-var enableEmail = false
-var smtpHost = "smtp.purelymail.com"
-var smtpPort = "587"
-var smtpUser = "example@purelymail.com"
-var smtpPass = "[y7EQ(xgTW_~{CUpPhO6(#"
-var sendTo = []string{"example@purelymail.com"} // Comma separated recipient list
-
-var indexTemplate *template.Template
-var payTemplate *template.Template
-var checkTemplate *template.Template
-var alertTemplate *template.Template
-var viewTemplate *template.Template
-var topWidgetTemplate *template.Template
-var superbchatTemplate *template.Template
-
-type configJson struct {
-	BCHAddress       string   `json:"BCHAddress"`
-	MinimumDonation  float64  `json:"MinimumDonation"`
-	MaxMessageChars  int      `json:"MaxMessageChars"`
-	MaxNameChars     int      `json:"MaxNameChars"`
-	WebViewUsername  string   `json:"WebViewUsername"`
-	WebViewPassword  string   `json:"WebViewPassword"`
-	OBSWidgetRefresh string   `json:"OBSWidgetRefresh"`
-	Checked          bool     `json:"ShowAmountCheckedByDefault"`
-	EnableEmail      bool     `json:"EnableEmail"`
-	SMTPServer       string   `json:"SMTPServer"`
-	SMTPPort         string   `json:"SMTPPort"`
-	SMTPUser         string   `json:"SMTPUser"`
-	SMTPPass         string   `json:"SMTPPass"`
-	SendToEmail      []string `json:"SendToEmail"`
-}
 
 type checkPage struct {
 	Addy     string
@@ -142,128 +104,6 @@ type transactionsDetailsResponse struct {
 			}
 		}
 		TxId string `json:"txid"`
-	}
-}
-
-//go:embed web/*
-var resources embed.FS
-
-//go:embed style
-var styleFiles embed.FS
-
-//go:embed config.json
-var configBytes []byte
-
-func main() {
-
-	var conf configJson
-	err := json.Unmarshal(configBytes, &conf)
-	if err != nil {
-		panic(err) // Fatal error, stop program
-	}
-
-	BCHAddress = conf.BCHAddress
-	ScamThreshold = conf.MinimumDonation
-	MessageMaxChar = conf.MaxMessageChars
-	NameMaxChar = conf.MaxNameChars
-	username = conf.WebViewUsername
-	password = conf.WebViewPassword
-	AlertWidgetRefreshInterval = conf.OBSWidgetRefresh
-	enableEmail = conf.EnableEmail
-	smtpHost = conf.SMTPServer
-	smtpPort = conf.SMTPPort
-	smtpUser = conf.SMTPUser
-	smtpPass = conf.SMTPPass
-	sendTo = conf.SendToEmail
-	if conf.Checked == true {
-		checked = " checked"
-	}
-
-	fmt.Println(BCHAddress)
-
-	fmt.Println(fmt.Sprintf("email notifications enabled?: %t", enableEmail))
-	fmt.Println(fmt.Sprintf("OBS Alert path: /alert?auth=%s", password))
-
-	var styleFS = http.FS(styleFiles)
-	fs := http.FileServer(styleFS)
-	http.Handle("/style/", fs)
-
-	http.HandleFunc("/", indexHandler)
-	http.HandleFunc("/superbchat", superbchatHandler)
-	http.HandleFunc("/pay", paymentHandler)
-	http.HandleFunc("/create", createHandler)
-	http.HandleFunc("/check", checkHandler)
-	http.HandleFunc("/alert", alertHandler)
-	http.HandleFunc("/view", viewHandler)
-	http.HandleFunc("/top", topwidgetHandler)
-
-	// Create files and directory if they don't exist
-	path := "log"
-	_ = os.Mkdir(path, os.ModePerm)
-
-	_, err = os.OpenFile("log/paid.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		panic(err)
-	}
-
-	_, err = os.OpenFile("log/alertqueue.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		panic(err)
-	}
-
-	_, err = os.OpenFile("log/superchats.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		panic(err)
-	}
-
-	indexTemplate, _ = template.ParseFS(resources, "web/index.html")
-	payTemplate, _ = template.ParseFS(resources, "web/pay.html")
-	checkTemplate, _ = template.ParseFS(resources, "web/check.html")
-	alertTemplate, _ = template.ParseFS(resources, "web/alert.html")
-	viewTemplate, _ = template.ParseFS(resources, "web/view.html")
-	topWidgetTemplate, _ = template.ParseFS(resources, "web/top.html")
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8900"
-	}
-	err = http.ListenAndServe(":"+port, nil)
-	if err != nil {
-		panic(err)
-	}
-
-}
-func mail(name string, amount string, message string) {
-	body := []byte(fmt.Sprintf("From: %s\n"+
-		"Subject: %s sent %s BCH\nDate: %s\n\n"+
-		"%s", smtpUser, name, amount, fmt.Sprint(time.Now().Format(time.RFC1123Z)), message))
-
-	auth := smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
-
-	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, smtpUser, sendTo, body)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println("email sent")
-}
-
-func condenseSpaces(s string) string {
-	return strings.Join(strings.Fields(s), " ")
-}
-func truncateStrings(s string, n int) string {
-	if len(s) <= n {
-		return s
-	}
-	for !utf8.ValidString(s[:n]) {
-		n--
-	}
-	return s[:n]
-}
-func reverse(ss []string) {
-	last := len(ss) - 1
-	for i := 0; i < len(ss)/2; i++ {
-		ss[i], ss[last-i] = ss[last-i], ss[i]
 	}
 }
 
@@ -499,7 +339,7 @@ func remove(stringSlice []string, stringToRemove string) []string {
 	return stringSlice
 }
 
-func indexHandler(w http.ResponseWriter, _ *http.Request) {
+func indexHandler(w http.ResponseWriter, r *http.Request) {
 	var c createDisplay
 	c.User = ""
 	c.Password = ""
@@ -508,6 +348,10 @@ func indexHandler(w http.ResponseWriter, _ *http.Request) {
 	c.InvalidUser = false
 	c.PasswordDontMatch = false
 	c.InvalidAddressFormat = false
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
 	err := indexTemplate.Execute(w, c)
 	if err != nil {
 		fmt.Println(err)
@@ -544,7 +388,8 @@ func topwidgetHandler(w http.ResponseWriter, r *http.Request) {
 func alertHandler(w http.ResponseWriter, r *http.Request) {
 	var v csvLog
 	v.Refresh = AlertWidgetRefreshInterval
-	if r.FormValue("auth") == password {
+	auth := r.URL.Query().Get("auth")
+	if auth == password {
 
 		csvFile, err := os.Open("log/alertqueue.csv")
 		if err != nil {
@@ -586,7 +431,7 @@ func alertHandler(w http.ResponseWriter, r *http.Request) {
 			v.DisplayToggle = "display: none;"
 		}
 	} else {
-		w.WriteHeader(http.StatusUnauthorized)
+		http.Error(w, "401 Unauthorized", http.StatusUnauthorized)
 		return // return http 401 unauthorized error
 	}
 	err := alertTemplate.Execute(w, v)
@@ -631,6 +476,12 @@ func paymentHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func createHandler(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", http.MethodPost)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	var user = r.FormValue("user")
 	fmt.Println(user)
 	var password = r.FormValue("password")
