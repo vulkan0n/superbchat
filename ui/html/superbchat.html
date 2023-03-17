@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <title>Superbchat</title>
-    <link href=style/bitcoin-cash-bch-logo.svg rel=icon>
-    <link href=style/style.css rel=stylesheet>
+    <link href=ui/static/bitcoin-cash-bch-logo.svg rel=icon>
+    <link href=ui/static/style.css rel=stylesheet>
 </head>
 
 <body>
@@ -19,7 +19,7 @@
     <label for="message">Message:</label><br>
     <textarea id="message" maxlength="{{.MaxChar}}" name="message" placeholder="{{.MaxChar}} character max"
               rows="6"></textarea><br>
-    <button id="submit" type="submit"><img src=style/bitcoin-cash-bch-logo.svg> Pay</button>
+    <button id="submit" type="submit"><img src=ui/static/bitcoin-cash-bch-logo.svg> Pay</button>
     <input id="showAmount" name="showAmount" type="checkbox" value="true" {{.Checked}}>
     <small><label for="showAmount">Show amount on stream?</label><small>
 </form>

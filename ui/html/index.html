@@ -3,8 +3,8 @@
 <html lang="en">
 <head>
     <title>Superbchat</title>
-    <link href=style/bitcoin-cash-bch-logo.svg rel=icon>
-    <link href=style/style.css rel=stylesheet>
+    <link href=ui/static/bitcoin-cash-bch-logo.svg rel=icon>
+    <link href=ui/static/style.css rel=stylesheet>
 </head>
 
 <body>
@@ -28,7 +28,7 @@
     <label for="address">Address to receive funds:</label>
     <b {{if not .InvalidAddressFormat}} hidden {{end}}>Invalid address format</b><br>
     <input id="address" maxlength="54" name="address" type="text" value="{{.Address}}" placeholder="bitcoincash:"><br>
-    <button id="submit" type="submit"><img src=style/bitcoin-cash-bch-logo.svg> Create</button>
+    <button id="submit" type="submit"><img src=ui/static/bitcoin-cash-bch-logo.svg> Create</button>
     </form>
 </body>
 

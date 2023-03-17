@@ -1,4 +1,4 @@
-module github.com/vulkan0n/superbchat.git
+module github.com/vulkan0n/superbchat
 
 go 1.20
 

@@ -4,21 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/smtp"
 	"os"
-	"strings"
 	"text/template"
-	"time"
-	"unicode/utf8"
-)
 
-// Email settings
-var enableEmail = false
-var smtpHost = "smtp.purelymail.com"
-var smtpPort = "587"
-var smtpUser = "example@purelymail.com"
-var smtpPass = "[y7EQ(xgTW_~{CUpPhO6(#"
-var sendTo = []string{"example@purelymail.com"} // Comma separated recipient list
+	embedfiles "github.com/vulkan0n/superbchat"
+)
 
 var indexTemplate *template.Template
 var payTemplate *template.Template
@@ -48,7 +38,7 @@ type configJson struct {
 func main() {
 
 	var conf configJson
-	err := json.Unmarshal(configBytes, &conf)
+	err := json.Unmarshal(embedfiles.ConfigBytes, &conf)
 	if err != nil {
 		panic(err) // Fatal error, stop program
 	}
@@ -76,9 +66,9 @@ func main() {
 	fmt.Println(fmt.Sprintf("OBS Alert path: /alert?auth=%s", password))
 
 	mux := http.NewServeMux()
-	var styleFS = http.FS(styleFiles)
+	var styleFS = http.FS(embedfiles.StyleFiles)
 	fs := http.FileServer(styleFS)
-	mux.Handle("/style/", fs)
+	mux.Handle("/ui/static/", fs)
 
 	mux.HandleFunc("/", indexHandler)
 	mux.HandleFunc("/superbchat", superbchatHandler)
@@ -90,30 +80,30 @@ func main() {
 	mux.HandleFunc("/top", topwidgetHandler)
 
 	// Create files and directory if they don't exist
-	path := "log"
-	_ = os.Mkdir(path, os.ModePerm)
+	logDirectory := "../../log"
+	_ = os.Mkdir(logDirectory, os.ModePerm)
 
-	_, err = os.OpenFile("log/paid.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	_, err = os.OpenFile(logDirectory+"/paid.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
 	}
 
-	_, err = os.OpenFile("log/alertqueue.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	_, err = os.OpenFile(logDirectory+"/alertqueue.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
 	}
 
-	_, err = os.OpenFile("log/superchats.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	_, err = os.OpenFile(logDirectory+"/superchats.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
 	}
 
-	indexTemplate, _ = template.ParseFS(resources, "web/index.html")
-	payTemplate, _ = template.ParseFS(resources, "web/pay.html")
-	checkTemplate, _ = template.ParseFS(resources, "web/check.html")
-	alertTemplate, _ = template.ParseFS(resources, "web/alert.html")
-	viewTemplate, _ = template.ParseFS(resources, "web/view.html")
-	topWidgetTemplate, _ = template.ParseFS(resources, "web/top.html")
+	indexTemplate, _ = template.ParseFS(embedfiles.Resources, "ui/html/index.html")
+	payTemplate, _ = template.ParseFS(embedfiles.Resources, "ui/html/pay.html")
+	checkTemplate, _ = template.ParseFS(embedfiles.Resources, "ui/html/check.html")
+	alertTemplate, _ = template.ParseFS(embedfiles.Resources, "ui/html/alert.html")
+	viewTemplate, _ = template.ParseFS(embedfiles.Resources, "ui/html/view.html")
+	topWidgetTemplate, _ = template.ParseFS(embedfiles.Resources, "ui/html/top.html")
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -124,37 +114,4 @@ func main() {
 		panic(err)
 	}
 
-}
-func mail(name string, amount string, message string) {
-	body := []byte(fmt.Sprintf("From: %s\n"+
-		"Subject: %s sent %s BCH\nDate: %s\n\n"+
-		"%s", smtpUser, name, amount, fmt.Sprint(time.Now().Format(time.RFC1123Z)), message))
-
-	auth := smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
-
-	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, smtpUser, sendTo, body)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println("email sent")
-}
-
-func condenseSpaces(s string) string {
-	return strings.Join(strings.Fields(s), " ")
-}
-func truncateStrings(s string, n int) string {
-	if len(s) <= n {
-		return s
-	}
-	for !utf8.ValidString(s[:n]) {
-		n--
-	}
-	return s[:n]
-}
-func reverse(ss []string) {
-	last := len(ss) - 1
-	for i := 0; i < len(ss)/2; i++ {
-		ss[i], ss[last-i] = ss[last-i], ss[i]
-	}
 }

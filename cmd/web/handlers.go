@@ -9,10 +9,13 @@ import (
 	"html"
 	"log"
 	"net/http"
+	"net/smtp"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
+	"time"
+	"unicode/utf8"
 
 	"github.com/skip2/go-qrcode"
 )
@@ -32,6 +35,14 @@ var transactionDetailsMethod = "/tx/data/"
 // example OBS url: https://example.com/alert?auth=adminadmin
 var password = "adminadmin"
 var checked = ""
+
+// Email settings
+var enableEmail = false
+var smtpHost = "smtp.purelymail.com"
+var smtpPort = "587"
+var smtpUser = "example@purelymail.com"
+var smtpPass = "[y7EQ(xgTW_~{CUpPhO6(#"
+var sendTo = []string{"example@purelymail.com"} // Comma separated recipient list
 
 type checkPage struct {
 	Addy     string
@@ -118,7 +129,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if (u == username) && (p == password) {
-		csvFile, err := os.Open("log/superchats.csv")
+		csvFile, err := os.Open("../../log/superchats.csv")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -211,6 +222,39 @@ func checkHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 	}
 }
+func mail(name string, amount string, message string) {
+	body := []byte(fmt.Sprintf("From: %s\n"+
+		"Subject: %s sent %s BCH\nDate: %s\n\n"+
+		"%s", smtpUser, name, amount, fmt.Sprint(time.Now().Format(time.RFC1123Z)), message))
+
+	auth := smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
+
+	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, smtpUser, sendTo, body)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("email sent")
+}
+
+func condenseSpaces(s string) string {
+	return strings.Join(strings.Fields(s), " ")
+}
+func truncateStrings(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	for !utf8.ValidString(s[:n]) {
+		n--
+	}
+	return s[:n]
+}
+func reverse(ss []string) {
+	last := len(ss) - 1
+	for i := 0; i < len(ss)/2; i++ {
+		ss[i], ss[last-i] = ss[last-i], ss[i]
+	}
+}
 
 func checkMailAndSend(cName string, cReceived float64, cMsg string, show string) {
 	if enableEmail {
@@ -223,7 +267,7 @@ func checkMailAndSend(cName string, cReceived float64, cMsg string, show string)
 }
 
 func appendTxToCSVs(cPayID string, cName string, cMsg string, cReceived float64, show string) {
-	f, err := os.OpenFile("log/superchats.csv",
+	f, err := os.OpenFile("../../log/superchats.csv",
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Println(err)
@@ -238,7 +282,7 @@ func appendTxToCSVs(cPayID string, cName string, cMsg string, cReceived float64,
 	if show != "true" {
 		csvAppend = fmt.Sprintf(`"%s","%s","%s","%s (hidden)"`, cPayID, html.EscapeString(cName), html.EscapeString(cMsg), fmt.Sprint(cReceived))
 	}
-	a, err := os.OpenFile("log/alertqueue.csv",
+	a, err := os.OpenFile("../../log/alertqueue.csv",
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Println(err)
@@ -299,7 +343,7 @@ func getTXs(txHashes *[]string) {
 }
 
 func getPaidLogTxs(txsPaidLog *[]string) {
-	file, err := os.Open("log/paid.log")
+	file, err := os.Open("../../log/paid.log")
 	if err != nil {
 		log.Fatalf("failed to open ")
 	}
@@ -315,7 +359,7 @@ func getPaidLogTxs(txsPaidLog *[]string) {
 }
 
 func appendTxToLog(txId string) {
-	f, err := os.OpenFile("log/paid.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile("../../log/paid.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Println(err)
 	}
@@ -365,7 +409,7 @@ func topwidgetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if (u == username) && (p == password) {
-		csvFile, err := os.Open("log/superchats.csv")
+		csvFile, err := os.Open("../../log/superchats.csv")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -391,7 +435,7 @@ func alertHandler(w http.ResponseWriter, r *http.Request) {
 	auth := r.URL.Query().Get("auth")
 	if auth == password {
 
-		csvFile, err := os.Open("log/alertqueue.csv")
+		csvFile, err := os.Open("../../log/alertqueue.csv")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -409,7 +453,7 @@ func alertHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Remove top line of CSV file after displaying it
 		if csvLines != nil {
-			popFile, _ := os.OpenFile("log/alertqueue.csv", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+			popFile, _ := os.OpenFile("../../log/alertqueue.csv", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 			popFirst := csvLines[1:]
 			w := csv.NewWriter(popFile)
 			err := w.WriteAll(popFirst)
