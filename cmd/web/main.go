@@ -1,48 +1,17 @@
 package main
 
 import (
-	"encoding/json"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
-	"text/template"
 
 	embedfiles "github.com/vulkan0n/superbchat"
 )
 
-var indexTemplate *template.Template
-var payTemplate *template.Template
-var checkTemplate *template.Template
-var alertTemplate *template.Template
-var viewTemplate *template.Template
-var topWidgetTemplate *template.Template
-var superbchatTemplate *template.Template
-
-type configJson struct {
-	BCHAddress       string   `json:"BCHAddress"`
-	MinimumDonation  float64  `json:"MinimumDonation"`
-	MaxMessageChars  int      `json:"MaxMessageChars"`
-	MaxNameChars     int      `json:"MaxNameChars"`
-	WebViewUsername  string   `json:"WebViewUsername"`
-	WebViewPassword  string   `json:"WebViewPassword"`
-	OBSWidgetRefresh string   `json:"OBSWidgetRefresh"`
-	Checked          bool     `json:"ShowAmountCheckedByDefault"`
-	EnableEmail      bool     `json:"EnableEmail"`
-	SMTPServer       string   `json:"SMTPServer"`
-	SMTPPort         string   `json:"SMTPPort"`
-	SMTPUser         string   `json:"SMTPUser"`
-	SMTPPass         string   `json:"SMTPPass"`
-	SendToEmail      []string `json:"SendToEmail"`
-}
-
 func main() {
 
-	var conf configJson
-	err := json.Unmarshal(embedfiles.ConfigBytes, &conf)
-	if err != nil {
-		panic(err) // Fatal error, stop program
-	}
-
+	conf := getDefaultConfig()
 	BCHAddress = conf.BCHAddress
 	ScamThreshold = conf.MinimumDonation
 	MessageMaxChar = conf.MaxMessageChars
@@ -59,6 +28,9 @@ func main() {
 	if conf.Checked == true {
 		checked = " checked"
 	}
+
+	flag.StringVar(&BCHAddress, "addr", "bitcoincash:address", "Bitcoin Cash address to recieve founds")
+	flag.Parse()
 
 	fmt.Println(BCHAddress)
 
@@ -83,7 +55,7 @@ func main() {
 	logDirectory := "./cmd/log"
 	_ = os.Mkdir(logDirectory, os.ModePerm)
 
-	_, err = os.OpenFile(logDirectory+"/paid.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	_, err := os.OpenFile(logDirectory+"/paid.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
 	}
@@ -98,13 +70,6 @@ func main() {
 		panic(err)
 	}
 
-	indexTemplate, _ = template.ParseFS(embedfiles.Resources, "ui/html/index.html")
-	payTemplate, _ = template.ParseFS(embedfiles.Resources, "ui/html/pay.html")
-	checkTemplate, _ = template.ParseFS(embedfiles.Resources, "ui/html/check.html")
-	alertTemplate, _ = template.ParseFS(embedfiles.Resources, "ui/html/alert.html")
-	viewTemplate, _ = template.ParseFS(embedfiles.Resources, "ui/html/view.html")
-	topWidgetTemplate, _ = template.ParseFS(embedfiles.Resources, "ui/html/top.html")
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8900"
@@ -113,5 +78,4 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
 }

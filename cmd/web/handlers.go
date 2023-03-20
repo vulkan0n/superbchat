@@ -649,7 +649,23 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 		s.MaxChar = MessageMaxChar
 		s.MinAmnt = ScamThreshold
 		s.Checked = checked
-		err := superbchatTemplate.Execute(w, s)
+		files := []string{
+			"./ui/html/base.html",
+			"./ui/html/partials/header.html",
+			"./ui/html/pages/superbchat.html",
+		}
+
+		ts, err := template.ParseFiles(files...)
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+
+		err = ts.ExecuteTemplate(w, "base", s)
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
 		if err != nil {
 			fmt.Println(err)
 		}
