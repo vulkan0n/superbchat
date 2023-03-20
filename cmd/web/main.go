@@ -80,7 +80,7 @@ func main() {
 	mux.HandleFunc("/top", topwidgetHandler)
 
 	// Create files and directory if they don't exist
-	logDirectory := "../../log"
+	logDirectory := "./cmd/log"
 	_ = os.Mkdir(logDirectory, os.ModePerm)
 
 	_, err = os.OpenFile(logDirectory+"/paid.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)

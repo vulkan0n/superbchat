@@ -1,11 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Payment</title>
-    <link href=ui/static/bitcoin-cash-bch-logo.svg rel=icon>
-    <link href=ui/static/style.css rel=stylesheet>
-</head>
-<body id="body-pay">
+{{define "title"}}Payment{{end}}
+
+{{define "main"}}
+<div id="body-pay">
 <h2>Send exactly <b>{{.Amount}}</b> BCH to confirm superchat:</h2>
 <label>Name:</label><br>
 <blockquote>
@@ -30,5 +26,5 @@
             src="/check?{{.CheckURL}}"></iframe>
 </blockquote>
 <small>You must stay on this screen until transaction is seen. Do not manually refresh this page.</small><br>
-</body>
-</html>
+</div>
+{{end}}

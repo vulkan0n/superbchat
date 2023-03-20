@@ -1,16 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Superbchat</title>
-    <link href=ui/static/bitcoin-cash-bch-logo.svg rel=icon>
-    <link href=ui/static/style.css rel=stylesheet>
-</head>
+{{define "title"}}User{{end}}
 
-<body>
-    <div id="title-box">
-        <h2>Super<label id="bch-title">BCH</label>at</h2>
-    </div>
-
+{{define "main"}}
+{{template "title-box" .}}
 <form action="/pay" method="POST">
     <label for="name">Name:</label><br>
     <input id="name" maxlength="25" name="name" placeholder="Anonymous" type="text"><br>
@@ -23,6 +14,4 @@
     <input id="showAmount" name="showAmount" type="checkbox" value="true" {{.Checked}}>
     <small><label for="showAmount">Show amount on stream?</label><small>
 </form>
-</body>
-
-</html>
+{{end}}

@@ -14,6 +14,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 	"unicode/utf8"
 
@@ -118,6 +119,40 @@ type transactionsDetailsResponse struct {
 	}
 }
 
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+
+	var c createDisplay
+	c.User = ""
+	c.Password = ""
+	c.RepeatedPassword = ""
+	c.Address = "bitcoincash:"
+	c.InvalidUser = false
+	c.PasswordDontMatch = false
+	c.InvalidAddressFormat = false
+
+	files := []string{
+		"./ui/html/base.html",
+		"./ui/html/partials/header.html",
+		"./ui/html/pages/index.html",
+	}
+
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+
+	err = ts.ExecuteTemplate(w, "base", c)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+}
+
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	var a viewPageData
 	var displayTemp string
@@ -129,7 +164,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if (u == username) && (p == password) {
-		csvFile, err := os.Open("../../log/superchats.csv")
+		csvFile, err := os.Open("./cmd/log/superchats.csv")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -160,9 +195,21 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		return // return http 401 unauthorized error
 	}
 	reverse(a.Display)
-	err := viewTemplate.Execute(w, a)
+
+	files := []string{
+		"./ui/html/pages/view.html",
+	}
+
+	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		fmt.Println(err)
+		log.Print(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+
+	err = ts.Execute(w, a)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
 
@@ -216,12 +263,23 @@ func checkHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
+	files := []string{
+		"./ui/html/pages/check.html",
+	}
 
-	err := checkTemplate.Execute(w, c)
+	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		fmt.Println(err)
+		log.Print(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+
+	err = ts.ExecuteTemplate(w, "base", c)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
+
 func mail(name string, amount string, message string) {
 	body := []byte(fmt.Sprintf("From: %s\n"+
 		"Subject: %s sent %s BCH\nDate: %s\n\n"+
@@ -267,7 +325,7 @@ func checkMailAndSend(cName string, cReceived float64, cMsg string, show string)
 }
 
 func appendTxToCSVs(cPayID string, cName string, cMsg string, cReceived float64, show string) {
-	f, err := os.OpenFile("../../log/superchats.csv",
+	f, err := os.OpenFile("./cmd/log/superchats.csv",
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Println(err)
@@ -282,7 +340,7 @@ func appendTxToCSVs(cPayID string, cName string, cMsg string, cReceived float64,
 	if show != "true" {
 		csvAppend = fmt.Sprintf(`"%s","%s","%s","%s (hidden)"`, cPayID, html.EscapeString(cName), html.EscapeString(cMsg), fmt.Sprint(cReceived))
 	}
-	a, err := os.OpenFile("../../log/alertqueue.csv",
+	a, err := os.OpenFile("./cmd/log/alertqueue.csv",
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Println(err)
@@ -343,7 +401,7 @@ func getTXs(txHashes *[]string) {
 }
 
 func getPaidLogTxs(txsPaidLog *[]string) {
-	file, err := os.Open("../../log/paid.log")
+	file, err := os.Open("./cmd/log/paid.log")
 	if err != nil {
 		log.Fatalf("failed to open ")
 	}
@@ -359,7 +417,7 @@ func getPaidLogTxs(txsPaidLog *[]string) {
 }
 
 func appendTxToLog(txId string) {
-	f, err := os.OpenFile("../../log/paid.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile("./cmd/log/paid.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Println(err)
 	}
@@ -383,24 +441,6 @@ func remove(stringSlice []string, stringToRemove string) []string {
 	return stringSlice
 }
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-	var c createDisplay
-	c.User = ""
-	c.Password = ""
-	c.RepeatedPassword = ""
-	c.Address = "bitcoincash:"
-	c.InvalidUser = false
-	c.PasswordDontMatch = false
-	c.InvalidAddressFormat = false
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
-	err := indexTemplate.Execute(w, c)
-	if err != nil {
-		fmt.Println(err)
-	}
-}
 func topwidgetHandler(w http.ResponseWriter, r *http.Request) {
 	u, p, ok := r.BasicAuth()
 	if !ok {
@@ -409,7 +449,7 @@ func topwidgetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if (u == username) && (p == password) {
-		csvFile, err := os.Open("../../log/superchats.csv")
+		csvFile, err := os.Open("./cmd/log/superchats.csv")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -423,9 +463,20 @@ func topwidgetHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return // return http 401 unauthorized error
 	}
-	err := topWidgetTemplate.Execute(w, nil)
+	files := []string{
+		"./ui/html/pages/top.html",
+	}
+
+	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		fmt.Println(err)
+		log.Print(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+
+	err = ts.Execute(w, nil)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
 
@@ -435,7 +486,7 @@ func alertHandler(w http.ResponseWriter, r *http.Request) {
 	auth := r.URL.Query().Get("auth")
 	if auth == password {
 
-		csvFile, err := os.Open("../../log/alertqueue.csv")
+		csvFile, err := os.Open("./cmd/log/alertqueue.csv")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -453,7 +504,7 @@ func alertHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Remove top line of CSV file after displaying it
 		if csvLines != nil {
-			popFile, _ := os.OpenFile("../../log/alertqueue.csv", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+			popFile, _ := os.OpenFile("./cmd/log/alertqueue.csv", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 			popFirst := csvLines[1:]
 			w := csv.NewWriter(popFile)
 			err := w.WriteAll(popFirst)
@@ -478,9 +529,20 @@ func alertHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "401 Unauthorized", http.StatusUnauthorized)
 		return // return http 401 unauthorized error
 	}
-	err := alertTemplate.Execute(w, v)
+	files := []string{
+		"./ui/html/pages/alert.html",
+	}
+
+	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		fmt.Println(err)
+		log.Print(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+
+	err = ts.Execute(w, v)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
 
@@ -509,9 +571,21 @@ func paymentHandler(w http.ResponseWriter, r *http.Request) {
 		tmp, _ := qrcode.Encode(fmt.Sprintf("%s?amount=%s", BCHAddress, s.Amount), qrcode.Low, 320)
 		s.QRB64 = base64.StdEncoding.EncodeToString(tmp)
 
-		err := payTemplate.Execute(w, s)
+		files := []string{
+			"./ui/html/base.html",
+			"./ui/html/pages/pay.html",
+		}
+
+		ts, err := template.ParseFiles(files...)
 		if err != nil {
-			fmt.Println(err)
+			log.Print(err.Error())
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+
+		err = ts.ExecuteTemplate(w, "base", s)
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 	} else {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -552,9 +626,22 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if c.InvalidUser || c.PasswordDontMatch || c.InvalidAddressFormat {
-		err := indexTemplate.Execute(w, c)
+		files := []string{
+			"./ui/html/base.html",
+			"./ui/html/partials/header.html",
+			"./ui/html/pages/index.html",
+		}
+
+		ts, err := template.ParseFiles(files...)
 		if err != nil {
-			fmt.Println(err)
+			log.Print(err.Error())
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+
+		err = ts.ExecuteTemplate(w, "base", c)
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 	} else {
 		var s superbchatDisplay
@@ -576,8 +663,22 @@ func superbchatHandler(w http.ResponseWriter, r *http.Request) {
 	s.MaxChar = MessageMaxChar
 	s.MinAmnt = ScamThreshold
 	s.Checked = checked
-	err := superbchatTemplate.Execute(w, s)
+
+	files := []string{
+		"./ui/html/base.html",
+		"./ui/html/partials/header.html",
+		"./ui/html/pages/superbchat.html",
+	}
+
+	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		fmt.Println(err)
+		log.Print(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+
+	err = ts.ExecuteTemplate(w, "base", s)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
