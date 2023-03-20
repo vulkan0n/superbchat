@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -32,10 +33,13 @@ func main() {
 	flag.StringVar(&BCHAddress, "addr", "bitcoincash:address", "Bitcoin Cash address to recieve founds")
 	flag.Parse()
 
-	fmt.Println(BCHAddress)
+	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+	errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime)
 
-	fmt.Println(fmt.Sprintf("email notifications enabled?: %t", enableEmail))
-	fmt.Println(fmt.Sprintf("OBS Alert path: /alert?auth=%s", password))
+	infoLog.Println(BCHAddress)
+
+	infoLog.Println(fmt.Sprintf("email notifications enabled?: %t", enableEmail))
+	infoLog.Println(fmt.Sprintf("OBS Alert path: /alert?auth=%s", password))
 
 	mux := http.NewServeMux()
 	var styleFS = http.FS(embedfiles.StyleFiles)
@@ -57,25 +61,32 @@ func main() {
 
 	_, err := os.OpenFile(logDirectory+"/paid.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		panic(err)
+		errorLog.Fatal(err)
 	}
 
 	_, err = os.OpenFile(logDirectory+"/alertqueue.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		panic(err)
+		errorLog.Fatal(err)
 	}
 
 	_, err = os.OpenFile(logDirectory+"/superchats.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		panic(err)
+		errorLog.Fatal(err)
 	}
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8900"
 	}
-	err = http.ListenAndServe(":"+port, mux)
+
+	srv := &http.Server{
+		Addr:     ":" + port,
+		ErrorLog: errorLog,
+		Handler:  mux,
+	}
+
+	err = srv.ListenAndServe()
 	if err != nil {
-		panic(err)
+		errorLog.Fatal(err)
 	}
 }
