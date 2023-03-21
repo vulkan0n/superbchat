@@ -119,7 +119,7 @@ type transactionsDetailsResponse struct {
 	}
 }
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) indexHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
@@ -142,18 +142,18 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		log.Print(err.Error())
+		app.errorLog.Fatal(err.Error())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 
 	err = ts.ExecuteTemplate(w, "base", c)
 	if err != nil {
-		log.Print(err.Error())
+		app.errorLog.Fatal(err.Error())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
 
-func viewHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) viewHandler(w http.ResponseWriter, r *http.Request) {
 	var a viewPageData
 	var displayTemp string
 
@@ -202,18 +202,18 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		log.Print(err.Error())
+		app.errorLog.Fatal(err.Error())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 
 	err = ts.Execute(w, a)
 	if err != nil {
-		log.Print(err.Error())
+		app.errorLog.Fatal(err.Error())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
 
-func checkHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) checkHandler(w http.ResponseWriter, r *http.Request) {
 
 	var c checkPage
 	c.Meta = `<meta http-equiv="Refresh" content="5">`
@@ -269,13 +269,13 @@ func checkHandler(w http.ResponseWriter, r *http.Request) {
 
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		log.Print(err.Error())
+		app.errorLog.Fatal(err.Error())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 
 	err = ts.ExecuteTemplate(w, "base", c)
 	if err != nil {
-		log.Print(err.Error())
+		app.errorLog.Fatal(err.Error())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
@@ -441,7 +441,7 @@ func remove(stringSlice []string, stringToRemove string) []string {
 	return stringSlice
 }
 
-func topwidgetHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) topwidgetHandler(w http.ResponseWriter, r *http.Request) {
 	u, p, ok := r.BasicAuth()
 	if !ok {
 		w.Header().Add("WWW-Authenticate", `Basic realm="Give username and password"`)
@@ -469,18 +469,18 @@ func topwidgetHandler(w http.ResponseWriter, r *http.Request) {
 
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		log.Print(err.Error())
+		app.errorLog.Fatal(err.Error())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 
 	err = ts.Execute(w, nil)
 	if err != nil {
-		log.Print(err.Error())
+		app.errorLog.Fatal(err.Error())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
 
-func alertHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) alertHandler(w http.ResponseWriter, r *http.Request) {
 	var v csvLog
 	v.Refresh = AlertWidgetRefreshInterval
 	auth := r.URL.Query().Get("auth")
@@ -535,18 +535,18 @@ func alertHandler(w http.ResponseWriter, r *http.Request) {
 
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		log.Print(err.Error())
+		app.errorLog.Fatal(err.Error())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 
 	err = ts.Execute(w, v)
 	if err != nil {
-		log.Print(err.Error())
+		app.errorLog.Fatal(err.Error())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
 
-func paymentHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) paymentHandler(w http.ResponseWriter, r *http.Request) {
 	if BCHAddress != "" {
 		var s superChat
 		s.Amount = html.EscapeString(r.FormValue("amount"))
@@ -578,13 +578,13 @@ func paymentHandler(w http.ResponseWriter, r *http.Request) {
 
 		ts, err := template.ParseFiles(files...)
 		if err != nil {
-			log.Print(err.Error())
+			app.errorLog.Fatal(err.Error())
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 
 		err = ts.ExecuteTemplate(w, "base", s)
 		if err != nil {
-			log.Print(err.Error())
+			app.errorLog.Fatal(err.Error())
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 	} else {
@@ -593,7 +593,7 @@ func paymentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func createHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) createHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
@@ -634,13 +634,13 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 
 		ts, err := template.ParseFiles(files...)
 		if err != nil {
-			log.Print(err.Error())
+			app.errorLog.Fatal(err.Error())
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 
 		err = ts.ExecuteTemplate(w, "base", c)
 		if err != nil {
-			log.Print(err.Error())
+			app.errorLog.Fatal(err.Error())
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 	} else {
@@ -657,22 +657,22 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 
 		ts, err := template.ParseFiles(files...)
 		if err != nil {
-			log.Print(err.Error())
+			app.errorLog.Fatal(err.Error())
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 
 		err = ts.ExecuteTemplate(w, "base", s)
 		if err != nil {
-			log.Print(err.Error())
+			app.errorLog.Fatal(err.Error())
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 		if err != nil {
-			fmt.Println(err)
+			app.errorLog.Fatal(err.Error())
 		}
 	}
 }
 
-func superbchatHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) superbchatHandler(w http.ResponseWriter, r *http.Request) {
 	var user = "vulkan0n"
 	var s superbchatDisplay
 	s.User = user
@@ -688,13 +688,13 @@ func superbchatHandler(w http.ResponseWriter, r *http.Request) {
 
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		log.Print(err.Error())
+		app.errorLog.Fatal(err.Error())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 
 	err = ts.ExecuteTemplate(w, "base", s)
 	if err != nil {
-		log.Print(err.Error())
+		app.errorLog.Fatal(err.Error())
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }

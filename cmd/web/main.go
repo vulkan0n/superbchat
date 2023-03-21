@@ -10,6 +10,11 @@ import (
 	embedfiles "github.com/vulkan0n/superbchat"
 )
 
+type application struct {
+	errorLog *log.Logger
+	infoLog  *log.Logger
+}
+
 func main() {
 
 	conf := getDefaultConfig()
@@ -36,6 +41,11 @@ func main() {
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime)
 
+	app := &application{
+		errorLog: errorLog,
+		infoLog:  infoLog,
+	}
+
 	infoLog.Println(BCHAddress)
 
 	infoLog.Println(fmt.Sprintf("email notifications enabled?: %t", enableEmail))
@@ -46,14 +56,14 @@ func main() {
 	fs := http.FileServer(styleFS)
 	mux.Handle("/ui/static/", fs)
 
-	mux.HandleFunc("/", indexHandler)
-	mux.HandleFunc("/superbchat", superbchatHandler)
-	mux.HandleFunc("/pay", paymentHandler)
-	mux.HandleFunc("/create", createHandler)
-	mux.HandleFunc("/check", checkHandler)
-	mux.HandleFunc("/alert", alertHandler)
-	mux.HandleFunc("/view", viewHandler)
-	mux.HandleFunc("/top", topwidgetHandler)
+	mux.HandleFunc("/", app.indexHandler)
+	mux.HandleFunc("/superbchat", app.superbchatHandler)
+	mux.HandleFunc("/pay", app.paymentHandler)
+	mux.HandleFunc("/create", app.createHandler)
+	mux.HandleFunc("/check", app.checkHandler)
+	mux.HandleFunc("/alert", app.alertHandler)
+	mux.HandleFunc("/view", app.viewHandler)
+	mux.HandleFunc("/top", app.topwidgetHandler)
 
 	// Create files and directory if they don't exist
 	logDirectory := "./cmd/log"
