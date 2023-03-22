@@ -6,8 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-
-	embedfiles "github.com/vulkan0n/superbchat"
 )
 
 type application struct {
@@ -51,20 +49,6 @@ func main() {
 	infoLog.Println(fmt.Sprintf("email notifications enabled?: %t", enableEmail))
 	infoLog.Println(fmt.Sprintf("OBS Alert path: /alert?auth=%s", password))
 
-	mux := http.NewServeMux()
-	var styleFS = http.FS(embedfiles.StyleFiles)
-	fs := http.FileServer(styleFS)
-	mux.Handle("/ui/static/", fs)
-
-	mux.HandleFunc("/", app.indexHandler)
-	mux.HandleFunc("/superbchat", app.superbchatHandler)
-	mux.HandleFunc("/pay", app.paymentHandler)
-	mux.HandleFunc("/create", app.createHandler)
-	mux.HandleFunc("/check", app.checkHandler)
-	mux.HandleFunc("/alert", app.alertHandler)
-	mux.HandleFunc("/view", app.viewHandler)
-	mux.HandleFunc("/top", app.topwidgetHandler)
-
 	// Create files and directory if they don't exist
 	logDirectory := "./cmd/log"
 	_ = os.Mkdir(logDirectory, os.ModePerm)
@@ -92,7 +76,7 @@ func main() {
 	srv := &http.Server{
 		Addr:     ":" + port,
 		ErrorLog: errorLog,
-		Handler:  mux,
+		Handler:  app.routes(),
 	}
 
 	err = srv.ListenAndServe()
