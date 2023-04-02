@@ -649,6 +649,7 @@ func (app *application) createHandler(w http.ResponseWriter, r *http.Request) {
 		s.MaxChar = MessageMaxChar
 		s.MinAmnt = ScamThreshold
 		s.Checked = checked
+
 		files := []string{
 			"./ui/html/base.html",
 			"./ui/html/partials/header.html",
