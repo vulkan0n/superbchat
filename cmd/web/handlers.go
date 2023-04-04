@@ -139,7 +139,6 @@ func (app *application) indexHandler(w http.ResponseWriter, r *http.Request) {
 		"./ui/html/partials/header.html",
 		"./ui/html/pages/index.html",
 	}
-
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
 		app.errorLog.Fatal(err.Error())

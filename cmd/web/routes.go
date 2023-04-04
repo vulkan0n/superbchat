@@ -6,7 +6,7 @@ import (
 	embedfiles "github.com/vulkan0n/superbchat"
 )
 
-func (app *application) routes() *http.ServeMux {
+func (app *application) routes() http.Handler {
 	mux := http.NewServeMux()
 	var styleFS = http.FS(embedfiles.StyleFiles)
 	fs := http.FileServer(styleFS)
@@ -21,5 +21,5 @@ func (app *application) routes() *http.ServeMux {
 	mux.HandleFunc("/view", app.viewHandler)
 	mux.HandleFunc("/top", app.topwidgetHandler)
 
-	return mux
+	return app.recoverPanic(app.logRequest(secureHeaders(mux)))
 }
