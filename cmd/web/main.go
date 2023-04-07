@@ -12,6 +12,15 @@ import (
 	"github.com/vulkan0n/superbchat/internal/models"
 )
 
+var BCHAddress = ""
+var ScamThreshold = 0.0001 // MINIMUM DONATION AMOUNT
+var MessageMaxChar = 250
+var NameMaxChar = 25
+var username = "admin" // chat log /view page
+var password = "adminadmin"
+var AlertWidgetRefreshInterval = "10" //seconds
+var checked = ""
+
 type application struct {
 	errorLog   *log.Logger
 	infoLog    *log.Logger

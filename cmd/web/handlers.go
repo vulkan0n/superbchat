@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/base64"
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"html"
 	"log"
@@ -18,22 +17,6 @@ import (
 
 	"github.com/skip2/go-qrcode"
 )
-
-var BCHAddress = ""
-var ScamThreshold = 0.0001 // MINIMUM DONATION AMOUNT
-var MessageMaxChar = 250
-var NameMaxChar = 25
-var username = "admin"                // chat log /view page
-var AlertWidgetRefreshInterval = "10" //seconds
-// fullstack.cash
-var apiURL = "https://api.fullstack.cash/v5/electrumx"
-var transactionsMethod = "/transactions/"
-var transactionDetailsMethod = "/tx/data/"
-
-// this is the password for both the /view page and the OBS /alert page
-// example OBS url: https://example.com/alert?auth=adminadmin
-var password = "adminadmin"
-var checked = ""
 
 type checkPage struct {
 	Addy     string
@@ -87,26 +70,6 @@ type viewPageData struct {
 	Message []string
 	Amount  []string
 	Display []string
-}
-
-type transactionsResponse struct {
-	Success      bool `json:"success"`
-	Transactions []struct {
-		Height  int    `json:"height"`
-		Tx_Hash string `json:"tx_hash"`
-	}
-}
-
-type transactionsDetailsResponse struct {
-	Success      bool `json:"success"`
-	Transactions []struct {
-		Details struct {
-			Vout []struct {
-				Value float64 `json:"value"`
-			}
-		}
-		TxId string `json:"txid"`
-	}
 }
 
 func (app *application) indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -334,32 +297,6 @@ func setCheckReceipt(receiptPtr *string, received float64) {
 		*receiptPtr = "<b style='color:red'>Scammed! " + fmt.Sprint(received) + " is below minimum</b>"
 	} else {
 		*receiptPtr = "<b>" + fmt.Sprint(received) + " BCH Received! Superchat sent</b>"
-	}
-}
-
-func getTxsDetailsResponse(txsDetailsResp *transactionsDetailsResponse, txHashes []string) {
-	txs := strings.Join(txHashes, `","`)
-	payloadTxt := `{ "txids" : ["` + txs + `"], "verbose": false }`
-	payload := strings.NewReader(payloadTxt)
-	reqTxDet, _ := http.NewRequest("POST", apiURL+transactionDetailsMethod, payload)
-	reqTxDet.Header.Set("Content-Type", "application/json")
-	respTxDet, _ := http.DefaultClient.Do(reqTxDet)
-	if err := json.NewDecoder(respTxDet.Body).Decode(txsDetailsResp); err != nil {
-		fmt.Println(err.Error())
-	}
-}
-
-func getTXs(txHashes *[]string) {
-	res, err := http.Get(apiURL + transactionsMethod + BCHAddress)
-	if err == nil {
-		txResp := &transactionsResponse{}
-		if err := json.NewDecoder(res.Body).Decode(txResp); err != nil {
-			fmt.Println(err.Error())
-		}
-
-		for _, tx := range txResp.Transactions {
-			*txHashes = append(*txHashes, tx.Tx_Hash)
-		}
 	}
 }
 
