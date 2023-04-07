@@ -9,13 +9,11 @@ import (
 	"html"
 	"log"
 	"net/http"
-	"net/smtp"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
 	"text/template"
-	"time"
 	"unicode/utf8"
 
 	"github.com/skip2/go-qrcode"
@@ -36,14 +34,6 @@ var transactionDetailsMethod = "/tx/data/"
 // example OBS url: https://example.com/alert?auth=adminadmin
 var password = "adminadmin"
 var checked = ""
-
-// Email settings
-var enableEmail = false
-var smtpHost = "smtp.purelymail.com"
-var smtpPort = "587"
-var smtpUser = "example@purelymail.com"
-var smtpPass = "[y7EQ(xgTW_~{CUpPhO6(#"
-var sendTo = []string{"example@purelymail.com"} // Comma separated recipient list
 
 type checkPage struct {
 	Addy     string
@@ -255,7 +245,6 @@ func (app *application) checkHandler(w http.ResponseWriter, r *http.Request) {
 					c.PayID = tx.TxId
 					if c.Received >= ScamThreshold {
 						appendTxToCSVs(c.PayID, c.Name, c.Msg, c.Received, r.FormValue("show"))
-						checkMailAndSend(c.Name, c.Received, c.Msg, r.FormValue("show"))
 					}
 				}
 			}
@@ -279,21 +268,6 @@ func (app *application) checkHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func mail(name string, amount string, message string) {
-	body := []byte(fmt.Sprintf("From: %s\n"+
-		"Subject: %s sent %s BCH\nDate: %s\n\n"+
-		"%s", smtpUser, name, amount, fmt.Sprint(time.Now().Format(time.RFC1123Z)), message))
-
-	auth := smtp.PlainAuth("", smtpUser, smtpPass, smtpHost)
-
-	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, smtpUser, sendTo, body)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println("email sent")
-}
-
 func condenseSpaces(s string) string {
 	return strings.Join(strings.Fields(s), " ")
 }
@@ -310,16 +284,6 @@ func reverse(ss []string) {
 	last := len(ss) - 1
 	for i := 0; i < len(ss)/2; i++ {
 		ss[i], ss[last-i] = ss[last-i], ss[i]
-	}
-}
-
-func checkMailAndSend(cName string, cReceived float64, cMsg string, show string) {
-	if enableEmail {
-		if show != "true" {
-			mail(cName, fmt.Sprint(cReceived)+" (hidden)", cMsg)
-		} else {
-			mail(cName, fmt.Sprint(cReceived), cMsg)
-		}
 	}
 }
 
