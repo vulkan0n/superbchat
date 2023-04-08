@@ -20,6 +20,6 @@
     <label for="address">Address to receive funds:</label>
     <b {{if not .InvalidAddressFormat}} hidden {{end}}>Invalid address format</b><br>
     <input id="address" maxlength="54" name="address" type="text" value="{{.Address}}" placeholder="bitcoincash:"><br>
-    <button id="submit" type="submit"><img src=ui/static/bitcoin-cash-bch-logo.svg> Create</button>
+    <button id="submit" type="submit"><img src=static/bitcoin-cash-bch-logo.svg> Create</button>
 </form>
 {{end}}

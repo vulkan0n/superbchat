@@ -73,11 +73,6 @@ type viewPageData struct {
 }
 
 func (app *application) indexHandler(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
-
 	var c createDisplay
 	c.User = ""
 	c.Password = ""
@@ -87,22 +82,7 @@ func (app *application) indexHandler(w http.ResponseWriter, r *http.Request) {
 	c.PasswordDontMatch = false
 	c.InvalidAddressFormat = false
 
-	files := []string{
-		"./ui/html/base.html",
-		"./ui/html/partials/header.html",
-		"./ui/html/pages/index.html",
-	}
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.errorLog.Fatal(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	}
-
-	err = ts.ExecuteTemplate(w, "base", c)
-	if err != nil {
-		app.errorLog.Fatal(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	}
+	app.render(w, http.StatusOK, "index.html", &c)
 }
 
 func (app *application) viewHandler(w http.ResponseWriter, r *http.Request) {
