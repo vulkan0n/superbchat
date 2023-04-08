@@ -1,0 +1,19 @@
+{{define "title"}}Sign Up{{end}}
+
+{{define "main"}}
+{{template "title-box" .}}
+<form action="/user/signup" method="POST">
+    <label for="user">User:   </label>
+    <b {{if not .InvalidUser}} hidden {{end}}>Username already taken!</b><br>
+    <input id="user" maxlength="25" name="user" type="text" value="{{.User}}"><br>
+    <label for="password">Password:</label>
+    <input id="password" maxlength="25" name="password" type="password" value="{{.Password}}"><br>
+    <label for="repeated-password">Repeat Password:</label>
+    <b {{if not .PasswordDontMatch}} hidden {{end}}>Password doesn't match</b><br>
+    <input id="repeated-password" maxlength="25" name="repeated-password" type="password" value="{{.RepeatedPassword}}"><br>
+    <label for="address">Address to receive funds:</label>
+    <b {{if not .InvalidAddressFormat}} hidden {{end}}>Invalid address format</b><br>
+    <input id="address" maxlength="54" name="address" type="text" value="{{.Address}}" placeholder="bitcoincash:"><br>
+    <button id="submit" type="submit"><img src=static/bitcoin-cash-bch-logo.svg> Create</button>
+</form>
+{{end}}
