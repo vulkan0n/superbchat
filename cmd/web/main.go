@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"os"
 
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
 	"github.com/vulkan0n/superbchat/internal/models"
 )
 
@@ -25,6 +25,7 @@ var checked = ""
 type application struct {
 	errorLog      *log.Logger
 	infoLog       *log.Logger
+	accounts      *models.AccountModel
 	superchats    *models.SuperchatModel
 	templateCache map[string]*template.Template
 }
@@ -44,7 +45,7 @@ func main() {
 	}
 
 	flag.StringVar(&BCHAddress, "addr", "bitcoincash:address", "Bitcoin Cash address to recieve founds")
-	dsn := flag.String("dsn", "web:pass@/superbchat?parseTime=true", "MySQL data source name")
+	dsn := flag.String("dsn", "postgres://web:pass@localhost/superbchat?sslmode=disable", "PostgreSQL data source name")
 	flag.Parse()
 
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
@@ -66,6 +67,7 @@ func main() {
 		errorLog:      errorLog,
 		infoLog:       infoLog,
 		superchats:    &models.SuperchatModel{DB: db},
+		accounts:      &models.AccountModel{DB: db},
 		templateCache: templateCache,
 	}
 
@@ -110,7 +112,7 @@ func main() {
 }
 
 func openDB(dsn string) (*sql.DB, error) {
-	db, err := sql.Open("mysql", dsn)
+	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return nil, err
 	}

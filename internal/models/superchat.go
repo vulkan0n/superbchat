@@ -12,8 +12,10 @@ type Superchat struct {
 	Name      string
 	Message   string
 	Amount    float64
-	Hidden    bool
+	IsHidden  bool
 	Recipient int
+	IsPaid    bool
+	IsAlerted bool
 	Created   time.Time
 }
 
@@ -21,26 +23,26 @@ type SuperchatModel struct {
 	DB *sql.DB
 }
 
-func (m *SuperchatModel) Insert(txId string, name string, message string, amount float64, hidden bool, recipient int) (int, error) {
-	stmt := `INSERT INTO superchat (tx_id, name, message, amount, hidden, user_id, created)
-    VALUES(?, ?, ?, ?, ?, ?, UTC_TIMESTAMP())`
-	result, err := m.DB.Exec(stmt, txId, name, message, amount, hidden, recipient)
+func (m *SuperchatModel) Insert(txId string, name string, message string, amount float64,
+	isHidden bool, recipient int) error {
+	stmt := `INSERT INTO superchat (tx_id, name, message, amount, hidden, account_id, paid, alerted, created)
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)`
+	_, err := m.DB.Exec(stmt, txId, name, message, amount, isHidden, recipient, false, false)
 	if err != nil {
-		return 0, nil
+		return err
 	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, nil
-	}
-	return int(id), nil
+
+	return nil
 }
 
 func (m *SuperchatModel) Get(id int) (*Superchat, error) {
-	stmt := `SELECT id, tx_id, name, message, amount, hidden, user_id, created FROM superchat WHERE id = ?`
+	stmt := `SELECT id, tx_id, name, message, amount, hidden, account_id, paid, alerted, created
+	FROM superchat WHERE id = $1`
 	row := m.DB.QueryRow(stmt, id)
 
 	s := &Superchat{}
-	err := row.Scan(&s.Id, &s.TxId, &s.Name, &s.Message, &s.Amount, &s.Hidden, &s.Recipient, &s.Created)
+	err := row.Scan(&s.Id, &s.TxId, &s.Name, &s.Message, &s.Amount, &s.IsHidden,
+		&s.Recipient, &s.IsPaid, &s.IsAlerted, &s.Created)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNoRecord
@@ -52,9 +54,10 @@ func (m *SuperchatModel) Get(id int) (*Superchat, error) {
 	return s, nil
 }
 
-func (m *SuperchatModel) GetFromUser(userId int) ([]*Superchat, error) {
-	stmt := `SELECT id, tx_id, name, message, amount, hidden, user_id, created FROM superchat WHERE user_id = ?`
-	rows, err := m.DB.Query(stmt, userId)
+func (m *SuperchatModel) GetFromAccount(accountId int) ([]*Superchat, error) {
+	stmt := `SELECT id, tx_id, name, message, amount, hidden, account_id, paid, alerted, created
+	FROM superchat WHERE account_id = $1`
+	rows, err := m.DB.Query(stmt, accountId)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +67,8 @@ func (m *SuperchatModel) GetFromUser(userId int) ([]*Superchat, error) {
 
 	for rows.Next() {
 		s := &Superchat{}
-		err = rows.Scan(&s.Id, &s.TxId, &s.Name, &s.Message, &s.Amount, &s.Hidden, &s.Recipient, &s.Created)
+		err = rows.Scan(&s.Id, &s.TxId, &s.Name, &s.Message, &s.Amount, &s.IsHidden,
+			&s.Recipient, &s.IsPaid, &s.IsAlerted, &s.Created)
 		if err != nil {
 			return nil, err
 		}

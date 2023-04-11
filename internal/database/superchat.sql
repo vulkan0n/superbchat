@@ -1,10 +1,14 @@
 CREATE TABLE superchat (
-      id integer NOT NULL PRIMARY KEY AUTO_INCREMENT,
+      id serial PRIMARY KEY,
       tx_id varchar(100) NOT NULL,
       name varchar(100) NOT NULL,
       message varchar(500) NOT NULL,
-      amount double NOT NULL,
-      hidden tinyint(1) NOT NULL,
-      user_id integer NOT NULL,
-      created datetime NOT NULL
+      amount numeric(16,8) NOT NULL,
+      hidden boolean NOT NULL,
+      account_id integer NOT NULL REFERENCES account,
+      paid boolean NOT NULL,
+      alerted boolean NOT NULL,
+      created timestamp NOT NULL
 );
+
+CREATE INDEX superchat_account_idx ON superchat (account_id);
