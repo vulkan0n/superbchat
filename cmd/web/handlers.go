@@ -72,17 +72,8 @@ type viewPageData struct {
 	Display []string
 }
 
-func (app *application) indexHandler(w http.ResponseWriter, r *http.Request) {
-	var c createDisplay
-	c.User = ""
-	c.Password = ""
-	c.RepeatedPassword = ""
-	c.Address = "bitcoincash:"
-	c.InvalidUser = false
-	c.PasswordDontMatch = false
-	c.InvalidAddressFormat = false
-
-	app.render(w, http.StatusOK, "index.html", &c)
+func (app *application) index(w http.ResponseWriter, r *http.Request) {
+	app.render(w, http.StatusOK, "index.html", nil)
 }
 
 func (app *application) viewHandler(w http.ResponseWriter, r *http.Request) {
@@ -473,21 +464,23 @@ func (app *application) paymentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *application) createHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
 
-	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", http.MethodPost)
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
+	var c createDisplay
+	c.User = ""
+	c.Password = ""
+	c.RepeatedPassword = ""
+	c.Address = ""
+
+	app.render(w, http.StatusOK, "signup.html", &c)
+}
+
+func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
+
 	var user = r.FormValue("user")
-	fmt.Println(user)
 	var password = r.FormValue("password")
-	fmt.Println(password)
 	var repeatedPassword = r.FormValue("repeated-password")
-	fmt.Println(repeatedPassword)
 	var address = r.FormValue("address")
-	fmt.Println(address)
 
 	var c createDisplay
 	c.User = user
@@ -506,23 +499,7 @@ func (app *application) createHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if c.InvalidUser || c.PasswordDontMatch || c.InvalidAddressFormat {
-		files := []string{
-			"./ui/html/base.html",
-			"./ui/html/partials/header.html",
-			"./ui/html/pages/index.html",
-		}
-
-		ts, err := template.ParseFiles(files...)
-		if err != nil {
-			app.errorLog.Fatal(err.Error())
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
-
-		err = ts.ExecuteTemplate(w, "base", c)
-		if err != nil {
-			app.errorLog.Fatal(err.Error())
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
+		app.render(w, http.StatusOK, "signup.html", &c)
 	} else {
 		var s superbchatDisplay
 		s.User = user

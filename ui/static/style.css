@@ -58,6 +58,18 @@ textarea {
     margin-bottom: 10px;
 }
 
+#user-button{
+    color: black;
+    display: inline-block;
+    background-color: white;
+    border-radius: 0.25rem;
+    padding:8px 28px;
+    text-decoration: none;
+}
+
+#user-button:hover{
+    background-color: #dfdfdf;
+}
 #bch-title {
     color: #0ac18e;
 }

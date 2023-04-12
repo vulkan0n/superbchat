@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"errors"
 	"time"
 )
 
@@ -30,4 +31,23 @@ func (m *AccountModel) Insert(username string, password string, address string, 
 		return err
 	}
 	return nil
+}
+
+func (m *AccountModel) Get(id int) (*Account, error) {
+	stmt := `SELECT id, username, password, address, name_max_char, message_max_char, min_donation, show_amount, created
+	FROM superchat WHERE id = $1`
+	row := m.DB.QueryRow(stmt, id)
+
+	s := &Account{}
+	err := row.Scan(&s.Id, &s.Username, &s.Password, &s.Address, &s.NameMaxChars,
+		&s.MessageMaxChars, &s.MinDonation, &s.IsDefaultShowAmount, &s.Created)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+
+	return s, nil
 }
