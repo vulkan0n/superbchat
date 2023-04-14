@@ -19,6 +19,7 @@ func (app *application) routes() http.Handler {
 	r.Get("/view", app.viewHandler)
 	r.Get("/user/login", notImplementedHandler())
 	r.Post("/user/login", notImplementedHandler())
+	r.Post("/user/logout", notImplementedHandler())
 	r.Get("/user/signup", app.userSignup)
 	r.Post("/user/signup", app.userSignupPost)
 	r.Get("/user/update", notImplementedHandler())

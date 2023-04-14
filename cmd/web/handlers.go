@@ -16,6 +16,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/skip2/go-qrcode"
+	"github.com/vulkan0n/superbchat/internal/validator"
 )
 
 type checkPage struct {
@@ -52,16 +53,6 @@ type superbchatDisplay struct {
 	MaxChar int
 	MinAmnt float64
 	Checked string
-}
-
-type createDisplay struct {
-	User                 string
-	Password             string
-	RepeatedPassword     string
-	Address              string
-	InvalidUser          bool
-	PasswordDontMatch    bool
-	InvalidAddressFormat bool
 }
 
 type viewPageData struct {
@@ -464,45 +455,48 @@ func (app *application) paymentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type userSignupForm struct {
+	User                string `form:"user"`
+	Password            string `form:"password"`
+	RepeatedPassword    string `form:"repeated-password"`
+	Address             string `form:"address"`
+	validator.Validator `form:"-"`
+}
+
 func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
 
-	var c createDisplay
-	c.User = ""
-	c.Password = ""
-	c.RepeatedPassword = ""
-	c.Address = ""
+	form := userSignupForm{
+		User:             "",
+		Password:         "",
+		RepeatedPassword: "",
+		Address:          "",
+	}
 
-	app.render(w, http.StatusOK, "signup.html", &c)
+	data := app.newTemplateData(r)
+	data.Form = form
+	app.render(w, http.StatusOK, "signup.html", data)
 }
 
 func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
-
-	var user = r.FormValue("user")
-	var password = r.FormValue("password")
-	var repeatedPassword = r.FormValue("repeated-password")
-	var address = r.FormValue("address")
-
-	var c createDisplay
-	c.User = user
-	c.Password = password
-	c.RepeatedPassword = repeatedPassword
-	c.Address = address
-
-	if user == "vulkan0n" {
-		c.InvalidUser = true
-	}
-	if password != repeatedPassword {
-		c.PasswordDontMatch = true
-	}
-	if !strings.HasPrefix(address, "bitcoincash:") {
-		c.InvalidAddressFormat = true
+	var form userSignupForm
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
 	}
 
-	if c.InvalidUser || c.PasswordDontMatch || c.InvalidAddressFormat {
-		app.render(w, http.StatusOK, "signup.html", &c)
+	form.CheckField(validator.NotBlank(form.User), "user", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
+	form.CheckField(validator.EqualValue(form.Password, form.RepeatedPassword), "password", "Password doesn't match")
+	form.CheckField(validator.AddresFormat(form.Address), "address", "Invalid address format")
+
+	if !form.IsValid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusOK, "signup.html", data)
 	} else {
 		var s superbchatDisplay
-		s.User = user
+		s.User = form.User
 		s.MaxChar = MessageMaxChar
 		s.MinAmnt = ScamThreshold
 		s.Checked = checked

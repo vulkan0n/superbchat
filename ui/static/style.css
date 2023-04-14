@@ -140,6 +140,11 @@ label {
     -webkit-user-select: none;
 }
 
+.error {
+    color: #074c53;
+    font-weight: bold;
+}
+
 b, a {
     color: #074c53;
 }

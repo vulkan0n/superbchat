@@ -8,6 +8,10 @@ import (
 	"github.com/vulkan0n/superbchat/ui"
 )
 
+type templateData struct {
+	Form any
+}
+
 func newTemplateCache() (map[string]*template.Template, error) {
 	cache := map[string]*template.Template{}
 	pages, err := fs.Glob(ui.Files, "html/pages/*.html")

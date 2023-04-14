@@ -1,7 +1,7 @@
 CREATE TABLE account (
     id serial PRIMARY KEY,
-    username varchar(25) NOT NULL,
-    password varchar(25) NOT NULL,
+    username varchar(25) UNIQUE NOT NULL,
+    password varchar(60) NOT NULL,
     address varchar(54) NOT NULL,
     name_max_char integer NOT NULL,
     message_max_char integer NOT NULL,
@@ -9,3 +9,5 @@ CREATE TABLE account (
     show_amount boolean NOT NULL,
     created timestamp NOT NULL
 );
+
+CREATE INDEX account_username_idx ON account (username);
