@@ -1,9 +1,12 @@
 package validator
 
 import (
+	"regexp"
 	"strings"
 	"unicode/utf8"
 )
+
+var AddressRX = regexp.MustCompile(`^(bitcoincash\:)?[a-zA-HJ-NP-Z0-9]{25,42}$`)
 
 type Validator struct {
 	FieldErrors map[string]string
@@ -32,6 +35,10 @@ func NotBlank(value string) bool {
 	return strings.TrimSpace(value) != ""
 }
 
+func MinChars(value string, minLenght int) bool {
+	return utf8.RuneCountInString(value) >= minLenght
+}
+
 func MaxChars(value string, maxLenght int) bool {
 	return utf8.RuneCountInString(value) <= maxLenght
 }
@@ -40,6 +47,6 @@ func EqualValue(value1, value2 string) bool {
 	return value1 == value2
 }
 
-func AddresFormat(address string) bool {
-	return strings.HasPrefix(address, "bitcoincash:")
+func Matches(value string, rx *regexp.Regexp) bool {
+	return rx.MatchString(value)
 }

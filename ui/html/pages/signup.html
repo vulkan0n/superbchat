@@ -4,14 +4,17 @@
 {{template "title-box" .}}
 <form action="/user/signup" method="POST">
     <label for="user">User:   </label>
-    {{with .Form.FieldErrors.username}}
+    {{with .Form.FieldErrors.user}}
     <label class="error">{{.}}</label><br>
     {{end}}
     <input id="user" maxlength="25" name="user" type="text" value="{{.Form.User}}"><br>
     <label for="password">Password:</label>
+    {{with .Form.FieldErrors.password}}
+    <label class="error">{{.}}</label><br>
+    {{end}}
     <input id="password" maxlength="25" name="password" type="password"><br>
     <label for="repeated-password">Repeat Password:</label>
-    {{with .Form.FieldErrors.password}}
+    {{with .Form.FieldErrors.repeatedPassword}}
     <label class="error">{{.}}</label><br>
     {{end}}
     <input id="repeated-password" maxlength="25" name="repeated-password" type="password"><br>

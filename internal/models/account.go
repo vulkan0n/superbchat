@@ -3,7 +3,11 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
+
+	"github.com/lib/pq"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Account struct {
@@ -23,10 +27,18 @@ type AccountModel struct {
 }
 
 func (m *AccountModel) Insert(username, password, address string) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	stmt := `INSERT INTO account (username, password, address, name_max_char, message_max_char, min_donation, show_amount, created)
   VALUES($1, $2, $3, 25, 300, 0.001, true, CURRENT_TIMESTAMP)`
-	_, err := m.DB.Exec(stmt, username, password, address)
+	_, err = m.DB.Exec(stmt, username, string(hashedPassword), address)
 	if err != nil {
+		var posgreSQLError *pq.Error
+		if errors.As(err, &posgreSQLError) {
+			if string(posgreSQLError.Code) == "23505" &&
+				strings.Contains(posgreSQLError.Message, "account_username_key") {
+				return ErrDuplicateUser
+			}
+		}
 		return err
 	}
 	return nil
@@ -39,6 +51,7 @@ func (m *AccountModel) Authenticate(username, password string) (int, error) {
 func (m *AccountModel) Exist(id int) (bool, error) {
 	return false, nil
 }
+
 func (m *AccountModel) Get(id int) (*Account, error) {
 	stmt := `SELECT id, username, password, address, name_max_char, message_max_char, min_donation, show_amount, created
 	FROM superchat WHERE id = $1`

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/base64"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"html"
 	"log"
@@ -16,6 +17,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/skip2/go-qrcode"
+	"github.com/vulkan0n/superbchat/internal/models"
 	"github.com/vulkan0n/superbchat/internal/validator"
 )
 
@@ -487,41 +489,29 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 
 	form.CheckField(validator.NotBlank(form.User), "user", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
-	form.CheckField(validator.EqualValue(form.Password, form.RepeatedPassword), "password", "Password doesn't match")
-	form.CheckField(validator.AddresFormat(form.Address), "address", "Invalid address format")
+	form.CheckField(validator.MinChars(form.Password, 8), "password", "Must be at least 8 characters long")
+	form.CheckField(validator.EqualValue(form.Password, form.RepeatedPassword), "repeatedPassword", "Password doesn't match")
+	form.CheckField(validator.Matches(form.Address, validator.AddressRX), "address", "Invalid address format")
 
 	if !form.IsValid() {
 		data := app.newTemplateData(r)
 		data.Form = form
 		app.render(w, http.StatusOK, "signup.html", data)
-	} else {
-		var s superbchatDisplay
-		s.User = form.User
-		s.MaxChar = MessageMaxChar
-		s.MinAmnt = ScamThreshold
-		s.Checked = checked
-
-		files := []string{
-			"./ui/html/base.html",
-			"./ui/html/partials/header.html",
-			"./ui/html/pages/superbchat.html",
-		}
-
-		ts, err := template.ParseFiles(files...)
-		if err != nil {
-			app.errorLog.Fatal(err.Error())
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
-
-		err = ts.ExecuteTemplate(w, "base", s)
-		if err != nil {
-			app.errorLog.Fatal(err.Error())
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
-		if err != nil {
-			app.errorLog.Fatal(err.Error())
+		return
+	}
+	err = app.accounts.Insert(form.User, form.Password, form.Address)
+	if err != nil {
+		if errors.Is(err, models.ErrDuplicateUser) {
+			form.AddFieldError("user", "Username already in use")
+			data := app.newTemplateData(r)
+			data.Form = form
+			app.render(w, http.StatusOK, "signup.html", data)
+			return
+		} else {
+			app.serverError(w, err)
 		}
 	}
+	http.Redirect(w, r, fmt.Sprintf("/%s", form.User), http.StatusSeeOther)
 }
 
 func (app *application) superbchatHandler(w http.ResponseWriter, r *http.Request) {
