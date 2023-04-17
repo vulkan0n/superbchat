@@ -9,7 +9,8 @@ import (
 )
 
 type templateData struct {
-	Form any
+	Form  any
+	Flash string
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {

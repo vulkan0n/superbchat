@@ -1,8 +1,7 @@
-CREATE TABLE session (
-    token CHAR(43) PRIMARY KEY,
-    data BLOB NOT NULL,
-    expiry TIMESTAMP(6) NOT NULL
+CREATE TABLE sessions (
+	token TEXT PRIMARY KEY,
+	data BYTEA NOT NULL,
+	expiry TIMESTAMPTZ NOT NULL
 );
 
-CREATE INDEX session_expiry_idx ON session (expiry);
-
+CREATE INDEX sessions_expiry_idx ON sessions (expiry);

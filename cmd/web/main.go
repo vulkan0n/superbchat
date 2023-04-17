@@ -8,7 +8,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/alexedwards/scs/postgresstore"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	_ "github.com/lib/pq"
 	"github.com/vulkan0n/superbchat/internal/models"
@@ -24,12 +27,13 @@ var AlertWidgetRefreshInterval = "10" //seconds
 var checked = ""
 
 type application struct {
-	errorLog      *log.Logger
-	infoLog       *log.Logger
-	accounts      *models.AccountModel
-	superchats    *models.SuperchatModel
-	templateCache map[string]*template.Template
-	formDecoder   *form.Decoder
+	errorLog       *log.Logger
+	infoLog        *log.Logger
+	accounts       *models.AccountModel
+	superchats     *models.SuperchatModel
+	templateCache  map[string]*template.Template
+	formDecoder    *form.Decoder
+	sessionManager *scs.SessionManager
 }
 
 func main() {
@@ -67,13 +71,18 @@ func main() {
 
 	formDecoder := *form.NewDecoder()
 
+	sessionManager := scs.New()
+	sessionManager.Store = postgresstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+
 	app := &application{
-		errorLog:      errorLog,
-		infoLog:       infoLog,
-		superchats:    &models.SuperchatModel{DB: db},
-		accounts:      &models.AccountModel{DB: db},
-		templateCache: templateCache,
-		formDecoder:   &formDecoder,
+		errorLog:       errorLog,
+		infoLog:        infoLog,
+		superchats:     &models.SuperchatModel{DB: db},
+		accounts:       &models.AccountModel{DB: db},
+		templateCache:  templateCache,
+		formDecoder:    &formDecoder,
+		sessionManager: sessionManager,
 	}
 
 	infoLog.Println(BCHAddress)

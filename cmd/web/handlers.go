@@ -511,6 +511,8 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 			app.serverError(w, err)
 		}
 	}
+	app.sessionManager.Put(r.Context(), "flash", "Your signup was successful. Please log in.")
+
 	http.Redirect(w, r, fmt.Sprintf("/%s", form.User), http.StatusSeeOther)
 }
 

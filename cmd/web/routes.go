@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
+	"github.com/justinas/alice"
 	"github.com/vulkan0n/superbchat/ui"
 )
 
@@ -13,22 +14,25 @@ func (app *application) routes() http.Handler {
 	fileserver := http.FileServer(http.FS(ui.Files))
 	r.Handle("/static/*", fileserver)
 
-	r.Get("/", app.index)
-	r.Get("/pay", app.paymentHandler)
-	r.Get("/check", app.checkHandler)
-	r.Get("/view", app.viewHandler)
+	dynamic := alice.New(app.sessionManager.LoadAndSave)
+
+	r.Get("/", dynamic.ThenFunc(app.index).ServeHTTP)
+	r.Get("/pay", dynamic.ThenFunc(app.paymentHandler).ServeHTTP)
+	r.Get("/check", dynamic.ThenFunc(app.checkHandler).ServeHTTP)
+	r.Get("/view", dynamic.ThenFunc(app.viewHandler).ServeHTTP)
 	r.Get("/user/login", notImplementedHandler())
 	r.Post("/user/login", notImplementedHandler())
 	r.Post("/user/logout", notImplementedHandler())
-	r.Get("/user/signup", app.userSignup)
-	r.Post("/user/signup", app.userSignupPost)
+	r.Get("/user/signup", dynamic.ThenFunc(app.userSignup).ServeHTTP)
+	r.Post("/user/signup", dynamic.ThenFunc(app.userSignupPost).ServeHTTP)
 	r.Get("/user/update", notImplementedHandler())
 	r.Post("/user/update", notImplementedHandler())
 	r.Get("/alert/:user/:pass", notImplementedHandler())
 	r.Get("/{user}", notImplementedHandler())
 	r.Post("/{user}", notImplementedHandler())
 
-	return app.recoverPanic(app.logRequest(secureHeaders(r)))
+	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
+	return standard.Then(r)
 }
 
 func notImplementedHandler() func(http.ResponseWriter, *http.Request) {
