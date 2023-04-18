@@ -560,6 +560,18 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/%s", form.User), http.StatusSeeOther)
 }
 
+func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
+	err := app.sessionManager.RenewToken(r.Context())
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	app.sessionManager.Remove(r.Context(), "authAccountId")
+	app.sessionManager.Put(r.Context(), "flash", "You've been logged out successfully")
+
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+}
+
 func (app *application) superbchatHandler(w http.ResponseWriter, r *http.Request) {
 	var user = "vulkan0n"
 	var s superbchatDisplay

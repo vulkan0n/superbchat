@@ -22,7 +22,7 @@ func (app *application) routes() http.Handler {
 	r.Get("/view", dynamic.ThenFunc(app.viewHandler).ServeHTTP)
 	r.Get("/user/login", dynamic.ThenFunc(app.userLogin).ServeHTTP)
 	r.Post("/user/login", dynamic.ThenFunc(app.userLoginPost).ServeHTTP)
-	r.Post("/user/logout", notImplementedHandler())
+	r.Post("/user/logout", dynamic.ThenFunc(app.userLogoutPost).ServeHTTP)
 	r.Get("/user/signup", dynamic.ThenFunc(app.userSignup).ServeHTTP)
 	r.Post("/user/signup", dynamic.ThenFunc(app.userSignupPost).ServeHTTP)
 	r.Get("/user/update", notImplementedHandler())
