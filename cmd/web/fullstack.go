@@ -44,8 +44,8 @@ func getTxsDetailsResponse(txsDetailsResp *transactionsDetailsResponse, txHashes
 	}
 }
 
-func getTXs(txHashes *[]string) {
-	res, err := http.Get(apiURL + transactionsMethod + BCHAddress)
+func getTXs(bchAddress string, txHashes *[]string) {
+	res, err := http.Get(apiURL + transactionsMethod + bchAddress)
 	if err == nil {
 		txResp := &transactionsResponse{}
 		if err := json.NewDecoder(res.Body).Decode(txResp); err != nil {

@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"flag"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -17,15 +16,6 @@ import (
 	"github.com/vulkan0n/superbchat/internal/models"
 )
 
-var BCHAddress = ""
-var ScamThreshold = 0.0001 // MINIMUM DONATION AMOUNT
-var MessageMaxChar = 250
-var NameMaxChar = 25
-var username = "admin" // chat log /view page
-var password = "adminadmin"
-var AlertWidgetRefreshInterval = "10" //seconds
-var checked = ""
-
 type application struct {
 	errorLog       *log.Logger
 	infoLog        *log.Logger
@@ -38,19 +28,6 @@ type application struct {
 
 func main() {
 
-	conf := getDefaultConfig()
-	BCHAddress = conf.BCHAddress
-	ScamThreshold = conf.MinimumDonation
-	MessageMaxChar = conf.MaxMessageChars
-	NameMaxChar = conf.MaxNameChars
-	username = conf.WebViewUsername
-	password = conf.WebViewPassword
-	AlertWidgetRefreshInterval = conf.OBSWidgetRefresh
-	if conf.Checked == true {
-		checked = " checked"
-	}
-
-	flag.StringVar(&BCHAddress, "addr", "bitcoincash:address", "Bitcoin Cash address to recieve founds")
 	dsn := flag.String("dsn", "postgres://web:pass@localhost/superbchat?sslmode=disable", "PostgreSQL data source name")
 	flag.Parse()
 
@@ -85,10 +62,6 @@ func main() {
 		sessionManager: sessionManager,
 	}
 
-	infoLog.Println(BCHAddress)
-
-	infoLog.Println(fmt.Sprintf("OBS Alert path: /alert?auth=%s", password))
-
 	// Create files and directory if they don't exist
 	logDirectory := "./cmd/log"
 	_ = os.Mkdir(logDirectory, os.ModePerm)
@@ -119,6 +92,7 @@ func main() {
 		Handler:  app.routes(),
 	}
 
+	app.infoLog.Printf("App running in port: %s", port)
 	err = srv.ListenAndServe()
 	if err != nil {
 		errorLog.Fatal(err)

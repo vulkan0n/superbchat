@@ -21,6 +21,8 @@ import (
 	"github.com/vulkan0n/superbchat/internal/validator"
 )
 
+var AlertWidgetRefreshInterval = "10"
+
 type checkPage struct {
 	Addy     string
 	PayID    string
@@ -70,46 +72,40 @@ func (app *application) index(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) viewHandler(w http.ResponseWriter, r *http.Request) {
+	_, err := app.accounts.Get(app.sessionManager.GetInt(r.Context(), "authAccountId"))
+	if err != nil {
+		app.serverError(w, err)
+	}
+
 	var a viewPageData
 	var displayTemp string
 
-	u, p, ok := r.BasicAuth()
-	if !ok {
-		w.Header().Add("WWW-Authenticate", `Basic realm="Give username and password"`)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
+	csvFile, err := os.Open("./cmd/log/superchats.csv")
+	if err != nil {
+		fmt.Println(err)
 	}
-	if (u == username) && (p == password) {
-		csvFile, err := os.Open("./cmd/log/superchats.csv")
+
+	defer func(csvFile *os.File) {
+		err := csvFile.Close()
 		if err != nil {
 			fmt.Println(err)
 		}
+	}(csvFile)
 
-		defer func(csvFile *os.File) {
-			err := csvFile.Close()
-			if err != nil {
-				fmt.Println(err)
-			}
-		}(csvFile)
-
-		csvLines, err := csv.NewReader(csvFile).ReadAll()
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		for _, line := range csvLines {
-			a.ID = append(a.ID, line[0])
-			a.Name = append(a.Name, line[1])
-			a.Message = append(a.Message, line[2])
-			a.Amount = append(a.Amount, line[3])
-			displayTemp = fmt.Sprintf("<h3><b>%s</b> sent <b>%s</b> BCH:</h3><p>%s</p>", html.EscapeString(line[1]), html.EscapeString(line[3]), line[2])
-			a.Display = append(a.Display, displayTemp)
-		}
-
-	} else {
-		w.WriteHeader(http.StatusUnauthorized)
-		return // return http 401 unauthorized error
+	csvLines, err := csv.NewReader(csvFile).ReadAll()
+	if err != nil {
+		fmt.Println(err)
 	}
+
+	for _, line := range csvLines {
+		a.ID = append(a.ID, line[0])
+		a.Name = append(a.Name, line[1])
+		a.Message = append(a.Message, line[2])
+		a.Amount = append(a.Amount, line[3])
+		displayTemp = fmt.Sprintf("<h3><b>%s</b> sent <b>%s</b> BCH:</h3><p>%s</p>", html.EscapeString(line[1]), html.EscapeString(line[3]), line[2])
+		a.Display = append(a.Display, displayTemp)
+	}
+
 	reverse(a.Display)
 
 	files := []string{
@@ -130,17 +126,21 @@ func (app *application) viewHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) checkHandler(w http.ResponseWriter, r *http.Request) {
+	account, err := app.accounts.Get(app.sessionManager.GetInt(r.Context(), "authAccountId"))
+	if err != nil {
+		app.serverError(w, err)
+	}
 
 	var c checkPage
 	c.Meta = `<meta http-equiv="Refresh" content="5">`
-	c.Addy = BCHAddress
+	c.Addy = account.Address
 	c.Received, _ = strconv.ParseFloat(r.FormValue("amount"), 64)
-	c.Name = truncateStrings(r.FormValue("name"), NameMaxChar)
-	c.Msg = truncateStrings(r.FormValue("msg"), MessageMaxChar)
+	c.Name = truncateStrings(r.FormValue("name"), account.NameMaxChars)
+	c.Msg = truncateStrings(r.FormValue("msg"), account.MessageMaxChars)
 	c.Receipt = "Waiting for payment..."
 
 	var txsWallet []string
-	getTXs(&txsWallet)
+	getTXs(account.Address, &txsWallet)
 	var txsPaidLog []string
 	getPaidLogTxs(&txsPaidLog)
 	for _, txToRemove := range txsPaidLog {
@@ -170,7 +170,7 @@ func (app *application) checkHandler(w http.ResponseWriter, r *http.Request) {
 						c.Msg = "⠀"
 					}
 					c.PayID = tx.TxId
-					if c.Received >= ScamThreshold {
+					if c.Received >= account.MinDonation {
 						appendTxToCSVs(c.PayID, c.Name, c.Msg, c.Received, r.FormValue("show"))
 					}
 				}
@@ -257,11 +257,7 @@ func appendTxToCSVs(cPayID string, cName string, cMsg string, cReceived float64,
 }
 
 func setCheckReceipt(receiptPtr *string, received float64) {
-	if received < ScamThreshold {
-		*receiptPtr = "<b style='color:red'>Scammed! " + fmt.Sprint(received) + " is below minimum</b>"
-	} else {
-		*receiptPtr = "<b>" + fmt.Sprint(received) + " BCH Received! Superchat sent</b>"
-	}
+	*receiptPtr = "<b>" + fmt.Sprint(received) + " BCH Received! Superchat sent</b>"
 }
 
 func getPaidLogTxs(txsPaidLog *[]string) {
@@ -312,7 +308,7 @@ func (app *application) topwidgetHandler(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	if (u == username) && (p == password) {
+	if (u == "test") && (p == "tust") {
 		csvFile, err := os.Open("./cmd/log/superchats.csv")
 		if err != nil {
 			fmt.Println(err)
@@ -345,6 +341,7 @@ func (app *application) topwidgetHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (app *application) alertHandler(w http.ResponseWriter, r *http.Request) {
+	password := r.URL.Query().Get("user")
 	var v csvLog
 	v.Refresh = AlertWidgetRefreshInterval
 	auth := r.URL.Query().Get("auth")
@@ -411,49 +408,50 @@ func (app *application) alertHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) paymentHandler(w http.ResponseWriter, r *http.Request) {
-	if BCHAddress != "" {
-		var s superChat
-		s.Amount = html.EscapeString(r.FormValue("amount"))
-		if r.FormValue("amount") == "" {
-			s.Amount = fmt.Sprint(ScamThreshold)
-		}
-		if r.FormValue("name") == "" {
-			s.Name = "Anonymous"
-		} else {
-			s.Name = html.EscapeString(truncateStrings(condenseSpaces(r.FormValue("name")), NameMaxChar))
-		}
-		s.Message = html.EscapeString(truncateStrings(condenseSpaces(r.FormValue("message")), MessageMaxChar))
-		s.Address = BCHAddress
-
-		params := url.Values{}
-		params.Add("amount", s.Amount)
-		params.Add("name", s.Name)
-		params.Add("msg", r.FormValue("message"))
-		params.Add("show", html.EscapeString(r.FormValue("showAmount")))
-		s.CheckURL = params.Encode()
-
-		tmp, _ := qrcode.Encode(fmt.Sprintf("%s?amount=%s", BCHAddress, s.Amount), qrcode.Low, 320)
-		s.QRB64 = base64.StdEncoding.EncodeToString(tmp)
-
-		files := []string{
-			"./ui/html/base.html",
-			"./ui/html/pages/pay.html",
-		}
-
-		ts, err := template.ParseFiles(files...)
-		if err != nil {
-			app.errorLog.Fatal(err.Error())
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
-
-		err = ts.ExecuteTemplate(w, "base", s)
-		if err != nil {
-			app.errorLog.Fatal(err.Error())
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
+	accountName := r.URL.Query().Get("user")
+	account, err := app.accounts.GetByUsername(accountName)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	var s superChat
+	s.Amount = html.EscapeString(r.FormValue("amount"))
+	if r.FormValue("amount") == "" {
+		s.Amount = fmt.Sprint(account.MinDonation)
+	}
+	if r.FormValue("name") == "" {
+		s.Name = "Anonymous"
 	} else {
-		w.WriteHeader(http.StatusInternalServerError)
-		return // return http 401 unauthorized error
+		s.Name = html.EscapeString(truncateStrings(condenseSpaces(r.FormValue("name")), account.NameMaxChars))
+	}
+	s.Message = html.EscapeString(truncateStrings(condenseSpaces(r.FormValue("message")), account.MessageMaxChars))
+	s.Address = account.Address
+
+	params := url.Values{}
+	params.Add("amount", s.Amount)
+	params.Add("name", s.Name)
+	params.Add("msg", r.FormValue("message"))
+	params.Add("show", html.EscapeString(r.FormValue("showAmount")))
+	s.CheckURL = params.Encode()
+
+	tmp, _ := qrcode.Encode(fmt.Sprintf("%s?amount=%s", account.Address, s.Amount), qrcode.Low, 320)
+	s.QRB64 = base64.StdEncoding.EncodeToString(tmp)
+
+	files := []string{
+		"./ui/html/base.html",
+		"./ui/html/pages/pay.html",
+	}
+
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.errorLog.Fatal(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+
+	err = ts.ExecuteTemplate(w, "base", s)
+	if err != nil {
+		app.errorLog.Fatal(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
 
@@ -573,12 +571,19 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) superbchatHandler(w http.ResponseWriter, r *http.Request) {
-	var user = "vulkan0n"
+	accountName := r.URL.Query().Get("user")
+	account, err := app.accounts.GetByUsername(accountName)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 	var s superbchatDisplay
-	s.User = user
-	s.MaxChar = MessageMaxChar
-	s.MinAmnt = ScamThreshold
-	s.Checked = checked
+	s.User = account.Username
+	s.MaxChar = account.MessageMaxChars
+	s.MinAmnt = account.MinDonation
+	if account.IsDefaultShowAmount {
+		s.Checked = " checked"
+	}
 
 	files := []string{
 		"./ui/html/base.html",
