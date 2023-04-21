@@ -16,6 +16,7 @@ import (
 	"text/template"
 	"unicode/utf8"
 
+	"github.com/go-chi/chi"
 	"github.com/skip2/go-qrcode"
 	"github.com/vulkan0n/superbchat/internal/models"
 	"github.com/vulkan0n/superbchat/internal/validator"
@@ -50,13 +51,6 @@ type csvLog struct {
 	Amount        string
 	DisplayToggle string
 	Refresh       string
-}
-
-type superbchatDisplay struct {
-	User    string
-	MaxChar int
-	MinAmnt float64
-	Checked string
 }
 
 type viewPageData struct {
@@ -570,36 +564,31 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 }
 
-func (app *application) superbchatHandler(w http.ResponseWriter, r *http.Request) {
-	accountName := r.URL.Query().Get("user")
-	account, err := app.accounts.GetByUsername(accountName)
+type superbchatForm struct {
+	User    string
+	MaxChar int
+	MinAmnt float64
+	Checked bool
+}
+
+func (app *application) superbchat(w http.ResponseWriter, r *http.Request) {
+	username := chi.URLParam(r, "user")
+	account, err := app.accounts.GetByUsername(username)
 	if err != nil {
-		app.serverError(w, err)
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w, r)
+		} else {
+			app.serverError(w, err)
+		}
 		return
 	}
-	var s superbchatDisplay
-	s.User = account.Username
-	s.MaxChar = account.MessageMaxChars
-	s.MinAmnt = account.MinDonation
-	if account.IsDefaultShowAmount {
-		s.Checked = " checked"
-	}
 
-	files := []string{
-		"./ui/html/base.html",
-		"./ui/html/partials/header.html",
-		"./ui/html/pages/superbchat.html",
+	data := app.newTemplateData(r)
+	data.Form = superbchatForm{
+		User:    account.Username,
+		MaxChar: account.MessageMaxChars,
+		MinAmnt: account.MinDonation,
+		Checked: account.IsDefaultShowAmount,
 	}
-
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.errorLog.Fatal(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	}
-
-	err = ts.ExecuteTemplate(w, "base", s)
-	if err != nil {
-		app.errorLog.Fatal(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	}
+	app.render(w, http.StatusOK, "superbchat.html", data)
 }

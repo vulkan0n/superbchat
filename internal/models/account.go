@@ -76,14 +76,14 @@ func (m *AccountModel) Exist(id int) (bool, error) {
 
 func (m *AccountModel) Get(id int) (*Account, error) {
 	stmt := `SELECT id, username, password, address, name_max_char, message_max_char, min_donation, show_amount, created
-	FROM superchat WHERE id = $1`
+	FROM account WHERE id = $1`
 
 	return GetOneByQuery(m, stmt, id)
 }
 
 func (m *AccountModel) GetByUsername(username string) (*Account, error) {
 	stmt := `SELECT id, username, password, address, name_max_char, message_max_char, min_donation, show_amount, created
-	FROM superchat WHERE username = $1`
+	FROM account WHERE username = $1`
 
 	return GetOneByQuery(m, stmt, username)
 }

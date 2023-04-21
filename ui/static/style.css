@@ -145,6 +145,13 @@ label {
     font-weight: bold;
 }
 
+.error-404 {
+    font-size: 400%;
+    color: #074c53;
+    font-weight: bold;
+    margin-top: 20px;
+}
+
 div.flash {
     color: #FFFFFF;
     font-weight: bold;

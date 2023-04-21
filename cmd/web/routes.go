@@ -10,6 +10,7 @@ import (
 
 func (app *application) routes() http.Handler {
 	r := chi.NewRouter()
+	r.NotFound(app.notFound)
 
 	fileserver := http.FileServer(http.FS(ui.Files))
 	r.Handle("/static/*", fileserver)
@@ -19,6 +20,7 @@ func (app *application) routes() http.Handler {
 
 	r.Get("/", dynamic.ThenFunc(app.index).ServeHTTP)
 	r.Get("/pay", dynamic.ThenFunc(app.paymentHandler).ServeHTTP)
+	r.Post("/pay", notImplementedHandler())
 	r.Get("/check", dynamic.ThenFunc(app.checkHandler).ServeHTTP)
 	r.Get("/view", protected.ThenFunc(app.viewHandler).ServeHTTP)
 	r.Get("/user/login", dynamic.ThenFunc(app.userLogin).ServeHTTP)
@@ -29,8 +31,7 @@ func (app *application) routes() http.Handler {
 	r.Get("/user/update", protected.ThenFunc(notImplementedHandler()).ServeHTTP)
 	r.Post("/user/update", protected.ThenFunc(notImplementedHandler()).ServeHTTP)
 	r.Get("/alert/:user/:pass", notImplementedHandler())
-	r.Get("/{user}", notImplementedHandler())
-	r.Post("/{user}", notImplementedHandler())
+	r.Get("/{user}", dynamic.ThenFunc(app.superbchat).ServeHTTP)
 
 	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 	return standard.Then(r)
