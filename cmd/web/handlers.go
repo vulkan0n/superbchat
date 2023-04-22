@@ -401,7 +401,44 @@ func (app *application) alertHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *application) paymentHandler(w http.ResponseWriter, r *http.Request) {
+type payPostForm struct {
+	AccountId  int     `form:"accountId"`
+	Name       string  `form:"name"`
+	Amount     float64 `form:"amount"`
+	Message    string  `form:"message"`
+	ShowAmount bool    `form:"showAmount"`
+}
+
+func (app *application) payPost(w http.ResponseWriter, r *http.Request) {
+	var form payPostForm
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+	account, err := app.accounts.Get(form.AccountId)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	if form.Amount == 0 {
+		form.Amount = account.MinDonation
+	}
+	if form.Name == "" {
+		form.Name = "Anonymous"
+	}
+
+	err = app.superchats.Insert("", form.Name, form.Message, form.Amount,
+		form.ShowAmount, form.AccountId)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	http.Redirect(w, r, "/"+account.Username, http.StatusSeeOther)
+}
+
+func (app *application) pay(w http.ResponseWriter, r *http.Request) {
 	accountName := r.URL.Query().Get("user")
 	account, err := app.accounts.GetByUsername(accountName)
 	if err != nil {
@@ -431,22 +468,7 @@ func (app *application) paymentHandler(w http.ResponseWriter, r *http.Request) {
 	tmp, _ := qrcode.Encode(fmt.Sprintf("%s?amount=%s", account.Address, s.Amount), qrcode.Low, 320)
 	s.QRB64 = base64.StdEncoding.EncodeToString(tmp)
 
-	files := []string{
-		"./ui/html/base.html",
-		"./ui/html/pages/pay.html",
-	}
-
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.errorLog.Fatal(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	}
-
-	err = ts.ExecuteTemplate(w, "base", s)
-	if err != nil {
-		app.errorLog.Fatal(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	}
+	app.render(w, http.StatusOK, "pay.html", app.newTemplateData(r))
 }
 
 type userSignupForm struct {
@@ -565,10 +587,12 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 }
 
 type superbchatForm struct {
-	User    string
-	MaxChar int
-	MinAmnt float64
-	Checked bool
+	Username     string
+	AccountId    int
+	NameMaxChars int
+	MsgMaxChars  int
+	MinAmnt      float64
+	Checked      bool
 }
 
 func (app *application) superbchat(w http.ResponseWriter, r *http.Request) {
@@ -585,10 +609,12 @@ func (app *application) superbchat(w http.ResponseWriter, r *http.Request) {
 
 	data := app.newTemplateData(r)
 	data.Form = superbchatForm{
-		User:    account.Username,
-		MaxChar: account.MessageMaxChars,
-		MinAmnt: account.MinDonation,
-		Checked: account.IsDefaultShowAmount,
+		Username:     account.Username,
+		AccountId:    account.Id,
+		NameMaxChars: account.NameMaxChars,
+		MsgMaxChars:  account.MessageMaxChars,
+		MinAmnt:      account.MinDonation,
+		Checked:      account.IsDefaultShowAmount,
 	}
 	app.render(w, http.StatusOK, "superbchat.html", data)
 }

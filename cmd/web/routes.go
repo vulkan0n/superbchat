@@ -19,8 +19,8 @@ func (app *application) routes() http.Handler {
 	protected := dynamic.Append(app.requireAuthentication)
 
 	r.Get("/", dynamic.ThenFunc(app.index).ServeHTTP)
-	r.Get("/pay", dynamic.ThenFunc(app.paymentHandler).ServeHTTP)
-	r.Post("/pay", notImplementedHandler())
+	r.Get("/pay", dynamic.ThenFunc(app.pay).ServeHTTP)
+	r.Post("/pay", dynamic.ThenFunc(app.payPost).ServeHTTP)
 	r.Get("/check", dynamic.ThenFunc(app.checkHandler).ServeHTTP)
 	r.Get("/view", protected.ThenFunc(app.viewHandler).ServeHTTP)
 	r.Get("/user/login", dynamic.ThenFunc(app.userLogin).ServeHTTP)
