@@ -2,7 +2,7 @@ body {
     background: #0ac18e;
     text-align: left;
     color: white;
-    width: 25em;
+    width: 40em;
     margin: 0 auto;
     padding-right: 20px;
     font-family: Arial, serif;
@@ -58,7 +58,11 @@ textarea {
     margin-bottom: 10px;
 }
 
-#user-button{
+button.user-button{
+    height: min-content;
+}
+
+.user-button{
     color: black;
     display: inline-block;
     background-color: white;
@@ -67,9 +71,28 @@ textarea {
     text-decoration: none;
 }
 
-#user-button:hover{
+.user-button:hover{
     background-color: #dfdfdf;
 }
+
+.view-buttons-box{
+    display: inline-block;
+    float: right;
+    margin-top: 30px;
+}
+
+.superchat-header{
+    margin: auto;
+}
+
+.superchat-msg{
+    margin: 5px 1px;
+}
+
+#logout-form{
+    display: inline-block;
+}
+
 #bch-title {
     color: #0ac18e;
 }

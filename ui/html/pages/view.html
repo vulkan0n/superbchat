@@ -1,54 +1,19 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Superchat Log</title>
-    <link href="" rel="icon">
-    <style>
-        body {
-            background: #0ac18e;
-            text-align: left;
-            color: white;
-            font-family: Arial;
-            font-size: 16px
-        }
+{{define "title"}}Home{{end}}
 
-        @media only screen and (max-device-width: 830px) {
-            body {
-                zoom: 1.5
-            }
-        }
-
-        b {
-            color: #074c53
-        }
-
-        h1, h2, h3 {
-            margin: 0;
-        }
-
-        p {
-            padding-left: 15px;
-            margin: 0;
-        }
-
-        blockquote {
-            background: #089b72;
-            color: white;
-            outline: none;
-            font-size: 16px;
-            padding-left: 14px;
-            padding-right: 14px;
-            padding-top: 7px;
-            padding-bottom: 7px;
-            margin: 8px;
-            width: 100%;
-            word-break: break-all;
-            word-wrap: break-word;
-        }
-    </style>
-</head>
-{{range .Display}}
-<blockquote>{{.}}</blockquote>
+{{define "main"}}
+{{template "title-box" .}}
+<div class="view-buttons-box">
+    <a class="user-button" href="user/settings">Settings</a>
+    <form id="logout-form" action="user/logout" method="POST">
+        <button class="user-button">Logout</button>
+    </form>
+</div>
+{{range .Superchats}}
+<blockquote>
+    <h3 class="superchat-header"><b>{{.Name}}</b> sent <b>{{.Amount}}</b>{{if .IsHidden}} (hidden){{end}} BCH:</h3>
+    <p class="superchat-msg">{{.Message}}</p>
+</blockquote>
+{{else}}
+<blockquote>No superbchats received yet!</blockquote>
 {{end}}
-</body>
-</html>
+{{end}}

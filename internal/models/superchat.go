@@ -56,7 +56,7 @@ func (m *SuperchatModel) Get(id int) (*Superchat, error) {
 
 func (m *SuperchatModel) GetFromAccount(accountId int) ([]*Superchat, error) {
 	stmt := `SELECT id, tx_id, name, message, amount, hidden, account_id, paid, alerted, created
-	FROM superchat WHERE account_id = $1`
+	FROM superchat WHERE account_id = $1 ORDER BY created DESC`
 	rows, err := m.DB.Query(stmt, accountId)
 	if err != nil {
 		return nil, err

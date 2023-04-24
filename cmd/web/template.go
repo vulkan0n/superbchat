@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"path/filepath"
 
+	"github.com/vulkan0n/superbchat/internal/models"
 	"github.com/vulkan0n/superbchat/ui"
 )
 
@@ -12,6 +13,7 @@ type templateData struct {
 	Form            any
 	Flash           string
 	IsAuthenticated bool
+	Superchats      []*models.Superchat
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {

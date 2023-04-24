@@ -53,70 +53,28 @@ type csvLog struct {
 	Refresh       string
 }
 
-type viewPageData struct {
-	ID      []string
-	Name    []string
-	Message []string
-	Amount  []string
-	Display []string
-}
-
 func (app *application) index(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "index.html", app.newTemplateData(r))
 }
 
-func (app *application) viewHandler(w http.ResponseWriter, r *http.Request) {
-	_, err := app.accounts.Get(app.sessionManager.GetInt(r.Context(), "authAccountId"))
+func (app *application) view(w http.ResponseWriter, r *http.Request) {
+	accountId := app.sessionManager.GetInt(r.Context(), "authAccountId")
+
+	superchats, err := app.superchats.GetFromAccount(accountId)
 	if err != nil {
 		app.serverError(w, err)
+		return
 	}
-
-	var a viewPageData
-	var displayTemp string
-
-	csvFile, err := os.Open("./cmd/log/superchats.csv")
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	defer func(csvFile *os.File) {
-		err := csvFile.Close()
-		if err != nil {
-			fmt.Println(err)
+	var paidSuperchats []*models.Superchat
+	for _, superchat := range superchats {
+		if superchat.IsPaid {
+			paidSuperchats = append(paidSuperchats, superchat)
 		}
-	}(csvFile)
-
-	csvLines, err := csv.NewReader(csvFile).ReadAll()
-	if err != nil {
-		fmt.Println(err)
 	}
 
-	for _, line := range csvLines {
-		a.ID = append(a.ID, line[0])
-		a.Name = append(a.Name, line[1])
-		a.Message = append(a.Message, line[2])
-		a.Amount = append(a.Amount, line[3])
-		displayTemp = fmt.Sprintf("<h3><b>%s</b> sent <b>%s</b> BCH:</h3><p>%s</p>", html.EscapeString(line[1]), html.EscapeString(line[3]), line[2])
-		a.Display = append(a.Display, displayTemp)
-	}
-
-	reverse(a.Display)
-
-	files := []string{
-		"./ui/html/pages/view.html",
-	}
-
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.errorLog.Fatal(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	}
-
-	err = ts.Execute(w, a)
-	if err != nil {
-		app.errorLog.Fatal(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	}
+	data := app.newTemplateData(r)
+	data.Superchats = paidSuperchats
+	app.render(w, http.StatusOK, "view.html", data)
 }
 
 func (app *application) checkHandler(w http.ResponseWriter, r *http.Request) {
@@ -430,7 +388,7 @@ func (app *application) payPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = app.superchats.Insert("", form.Name, form.Message, form.Amount,
-		form.ShowAmount, form.AccountId)
+		!form.ShowAmount, form.AccountId)
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -571,7 +529,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	}
 	app.sessionManager.Put(r.Context(), "authAccountId", id)
 
-	http.Redirect(w, r, fmt.Sprintf("/%s", form.User), http.StatusSeeOther)
+	http.Redirect(w, r, "/view", http.StatusSeeOther)
 }
 
 func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
