@@ -1,0 +1,38 @@
+{{define "title"}}Settings{{end}}
+
+{{define "main"}}
+{{template "title-box" .}}
+<form action="/user/settings" method="POST">
+    <label for="user">Address:   </label>
+    {{with .Form.FieldErrors.address}}
+    <label class="error">{{.}}</label><br>
+    {{end}}
+    <input id="address" maxlength="54" name="address" type="text"
+    value="{{.Form.Address}}" placeholder="bitcoincash:"><br>
+
+    <label for="minDonation">Min. Donation:</label><br>
+    {{with .Form.FieldErrors.minDonation}}
+    <label class="error">{{.}}</label><br>
+    {{end}}
+    <input id="minDonation" name="minDonation"
+    value="{{.Form.MinDonation}}" step="0.00001" type="number" min="0.00001">
+
+    <label for="nameMaxChars">Donor name max. character lenght:</label><br>
+    {{with .Form.FieldErrors.nameMaxChars}}
+    <label class="error">{{.}}</label><br>
+    {{end}}
+    <input id="nameMaxChars" name="nameMaxChars"
+    value="{{.Form.NameMaxChars}}" step="1" type="number" min="1">
+
+    <label for="msgMaxChars">Donor message max. character lenght:</label><br>
+    {{with .Form.FieldErrors.msgMaxChars}}
+    <label class="error">{{.}}</label><br>
+    {{end}}
+    <input id="msgMaxChars" name="msgMaxChars" value="{{.Form.MessageMaxChars}}" step="1" type="number" min="1">
+
+    <input id="showAmount" name="showAmount" type="checkbox" value="true" {{if .Form.IsDefaultShowAmount}}checked{{end}}>
+    <label for="showAmount">Default show amount checked</label><br>
+
+    <button id="submit" type="submit"><img src=/static/bitcoin-cash-bch-logo.svg> Update</button>
+</form>
+{{end}}

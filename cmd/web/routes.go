@@ -28,8 +28,8 @@ func (app *application) routes() http.Handler {
 	r.Post("/user/logout", protected.ThenFunc(app.userLogoutPost).ServeHTTP)
 	r.Get("/user/signup", dynamic.ThenFunc(app.userSignup).ServeHTTP)
 	r.Post("/user/signup", dynamic.ThenFunc(app.userSignupPost).ServeHTTP)
-	r.Get("/user/settings", protected.ThenFunc(notImplementedHandler()).ServeHTTP)
-	r.Post("/user/settings", protected.ThenFunc(notImplementedHandler()).ServeHTTP)
+	r.Get("/user/settings", protected.ThenFunc(app.settings).ServeHTTP)
+	r.Post("/user/settings", protected.ThenFunc(app.settingsPost).ServeHTTP)
 	r.Get("/alert/:user/:pass", notImplementedHandler())
 	r.Get("/{user}", dynamic.ThenFunc(app.superbchat).ServeHTTP)
 

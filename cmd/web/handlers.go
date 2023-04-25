@@ -77,6 +77,74 @@ func (app *application) view(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "view.html", data)
 }
 
+type settingsForm struct {
+	Address             string  `form:"address"`
+	MinDonation         float64 `form:"minDonation"`
+	NameMaxChars        int     `form:"nameMaxChars"`
+	MessageMaxChars     int     `form:"msgMaxChars"`
+	IsDefaultShowAmount bool    `form:"showAmount"`
+	validator.Validator `form:"-"`
+}
+
+func (app *application) settings(w http.ResponseWriter, r *http.Request) {
+	accountId := app.sessionManager.GetInt(r.Context(), "authAccountId")
+	account, err := app.accounts.Get(accountId)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	data := app.newTemplateData(r)
+	data.Form = settingsForm{
+		Address:             account.Address,
+		MinDonation:         account.MinDonation,
+		NameMaxChars:        account.NameMaxChars,
+		MessageMaxChars:     account.MessageMaxChars,
+		IsDefaultShowAmount: account.IsDefaultShowAmount,
+	}
+	app.render(w, http.StatusOK, "settings.html", data)
+}
+
+func (app *application) settingsPost(w http.ResponseWriter, r *http.Request) {
+	accountId := app.sessionManager.GetInt(r.Context(), "authAccountId")
+
+	var form settingsForm
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form.CheckField(validator.MaxChars(form.NameMaxChars, 100), "nameMaxChars", "Must be less than 100 characters long")
+	form.CheckField(validator.MaxChars(form.MessageMaxChars, 1000), "msgMaxChars", "Must be less than 1000 characters long")
+	form.CheckField(validator.Matches(form.Address, validator.AddressRX), "address", "Invalid address format")
+
+	if !form.IsValid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusOK, "settings.html", data)
+		return
+	}
+
+	account, err := app.accounts.Get(accountId)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	account.Address = form.Address
+	account.MinDonation = form.MinDonation
+	account.NameMaxChars = form.NameMaxChars
+	account.MessageMaxChars = form.MessageMaxChars
+	account.IsDefaultShowAmount = form.IsDefaultShowAmount
+	err = app.accounts.Update(account)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	app.sessionManager.Put(r.Context(), "flash", "Settings updated successfully")
+	http.Redirect(w, r, "/view", http.StatusSeeOther)
+}
+
 func (app *application) checkHandler(w http.ResponseWriter, r *http.Request) {
 	account, err := app.accounts.Get(app.sessionManager.GetInt(r.Context(), "authAccountId"))
 	if err != nil {

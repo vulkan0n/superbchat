@@ -44,6 +44,21 @@ func (m *AccountModel) Insert(username, password, address string) error {
 	return nil
 }
 
+func (m *AccountModel) Update(account *Account) error {
+	stmt := `UPDATE account
+      SET address          = $1,
+	      name_max_char    = $2,
+		  message_max_char = $3,
+		  min_donation     = $4,
+		  show_amount      = $5
+	  WHERE id = $6`
+	_, err := m.DB.Exec(stmt, account.Address, account.NameMaxChars, account.MessageMaxChars,
+		account.MinDonation, account.IsDefaultShowAmount, account.Id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func (m *AccountModel) Authenticate(username, password string) (int, error) {
 	var id int
 	var hashedPassword []byte

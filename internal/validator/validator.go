@@ -44,8 +44,8 @@ func MinChars(value string, minLenght int) bool {
 	return utf8.RuneCountInString(value) >= minLenght
 }
 
-func MaxChars(value string, maxLenght int) bool {
-	return utf8.RuneCountInString(value) <= maxLenght
+func MaxChars(value int, maxLenght int) bool {
+	return value <= maxLenght
 }
 
 func EqualValue(value1, value2 string) bool {
