@@ -34,16 +34,6 @@ type checkPage struct {
 	Receipt  string
 }
 
-type superChat struct {
-	Name     string
-	Message  string
-	Amount   string
-	Address  string
-	QRB64    string
-	PayID    string
-	CheckURL string
-}
-
 type csvLog struct {
 	ID            string
 	Name          string
@@ -145,7 +135,35 @@ func (app *application) settingsPost(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/view", http.StatusSeeOther)
 }
 
+type dumbPage struct {
+	Receipt string
+	Meta    string
+}
+
 func (app *application) checkHandler(w http.ResponseWriter, r *http.Request) {
+	c := dumbPage{
+		Receipt: "Test",
+		Meta:    `<meta http-equiv="Refresh" content="5">`,
+	}
+
+	files := []string{
+		"./ui/html/pages/check.html",
+	}
+
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.errorLog.Fatal(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+
+	err = ts.ExecuteTemplate(w, "check.html", c)
+	if err != nil {
+		app.errorLog.Fatal(err.Error())
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+}
+
+func (app *application) checkHandlerOld(w http.ResponseWriter, r *http.Request) {
 	account, err := app.accounts.Get(app.sessionManager.GetInt(r.Context(), "authAccountId"))
 	if err != nil {
 		app.serverError(w, err)
@@ -226,12 +244,6 @@ func truncateStrings(s string, n int) string {
 		n--
 	}
 	return s[:n]
-}
-func reverse(ss []string) {
-	last := len(ss) - 1
-	for i := 0; i < len(ss)/2; i++ {
-		ss[i], ss[last-i] = ss[last-i], ss[i]
-	}
 }
 
 func appendTxToCSVs(cPayID string, cName string, cMsg string, cReceived float64, show string) {
@@ -434,67 +446,68 @@ type payPostForm struct {
 	Message    string  `form:"message"`
 	ShowAmount bool    `form:"showAmount"`
 }
+type superChat struct {
+	Name     string
+	Message  string
+	Amount   string
+	Address  string
+	QRB64    string
+	PayID    string
+	CheckURL string
+}
+type payForm struct {
+	Amount    float64
+	Name      string
+	Message   string
+	Address   string
+	AddressQR string
+	CheckURL  string
+}
 
 func (app *application) payPost(w http.ResponseWriter, r *http.Request) {
-	var form payPostForm
-	err := app.decodePostForm(r, &form)
+	var postForm payPostForm
+	err := app.decodePostForm(r, &postForm)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
-	account, err := app.accounts.Get(form.AccountId)
+	account, err := app.accounts.Get(postForm.AccountId)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	if form.Amount == 0 {
-		form.Amount = account.MinDonation
+	if postForm.Amount == 0 {
+		postForm.Amount = account.MinDonation
 	}
-	if form.Name == "" {
-		form.Name = "Anonymous"
+	if postForm.Name == "" {
+		postForm.Name = "Anonymous"
 	}
 
-	err = app.superchats.Insert("", form.Name, form.Message, form.Amount,
-		!form.ShowAmount, form.AccountId)
+	err = app.superchats.Insert("", postForm.Name, postForm.Message, postForm.Amount,
+		!postForm.ShowAmount, postForm.AccountId)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
-	http.Redirect(w, r, "/"+account.Username, http.StatusSeeOther)
-}
 
-func (app *application) pay(w http.ResponseWriter, r *http.Request) {
-	accountName := r.URL.Query().Get("user")
-	account, err := app.accounts.GetByUsername(accountName)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	var s superChat
-	s.Amount = html.EscapeString(r.FormValue("amount"))
-	if r.FormValue("amount") == "" {
-		s.Amount = fmt.Sprint(account.MinDonation)
-	}
-	if r.FormValue("name") == "" {
-		s.Name = "Anonymous"
-	} else {
-		s.Name = html.EscapeString(truncateStrings(condenseSpaces(r.FormValue("name")), account.NameMaxChars))
-	}
-	s.Message = html.EscapeString(truncateStrings(condenseSpaces(r.FormValue("message")), account.MessageMaxChars))
-	s.Address = account.Address
-
+	tmp, _ := qrcode.Encode(fmt.Sprintf("%s?amount=%f", account.Address, postForm.Amount), qrcode.Low, 320)
 	params := url.Values{}
-	params.Add("amount", s.Amount)
-	params.Add("name", s.Name)
-	params.Add("msg", r.FormValue("message"))
-	params.Add("show", html.EscapeString(r.FormValue("showAmount")))
-	s.CheckURL = params.Encode()
+	params.Add("accountid", fmt.Sprintf("%v", postForm.AccountId))
+	params.Add("amount", fmt.Sprintf("%f", postForm.Amount))
 
-	tmp, _ := qrcode.Encode(fmt.Sprintf("%s?amount=%s", account.Address, s.Amount), qrcode.Low, 320)
-	s.QRB64 = base64.StdEncoding.EncodeToString(tmp)
+	form := payForm{
+		Amount:    postForm.Amount,
+		Name:      postForm.Name,
+		Message:   postForm.Message,
+		Address:   account.Address,
+		AddressQR: base64.StdEncoding.EncodeToString(tmp),
+		CheckURL:  params.Encode(),
+	}
+	data := app.newTemplateData(r)
+	data.Form = form
 
-	app.render(w, http.StatusOK, "pay.html", app.newTemplateData(r))
+	app.render(w, http.StatusOK, "pay.html", data)
 }
 
 type userSignupForm struct {

@@ -2,28 +2,28 @@
 
 {{define "main"}}
 <div id="body-pay">
-<h2>Send exactly <b>{{.Amount}}</b> BCH to confirm superchat:</h2>
+<h2>Send exactly <b>{{.Form.Amount}}</b> BCH to confirm superchat:</h2>
 <label>Name:</label><br>
 <blockquote>
-    {{.Name}}
+    {{.Form.Name}}
 </blockquote>
 <label>Message:</label><br>
 <blockquote>
-    {{.Message}}
+    {{.Form.Message}}
 </blockquote>
 <label>Payment Address</label><br>
 <blockquote style="user-select: all">
-    {{.Address}}
+    {{.Form.Address}}
 </blockquote>
 <label>Or scan:</label><br>
 <blockquote>
-    <img src="data:image/png;base64,{{.QRB64}}"/>
+    <img src="data:image/png;base64,{{.Form.AddressQR}}"/>
 </blockquote>
-<label>Checking for payment (every 5 seconds) <a href="/check?{{.CheckURL}}" target="checkframe">Manual
-    check</a></label><br>
+<label>Checking for payment (every 5 seconds)
+    <a href="/check?{{.Form.CheckURL}}" target="checkframe">Manual check</a></label><br>
 <blockquote>
     <iframe allowtransparency="true" frameBorder="0" name="checkframe" scrolling="no"
-            src="/check?{{.CheckURL}}"></iframe>
+            src="/check?{{.Form.CheckURL}}"></iframe>
 </blockquote>
 <small>You must stay on this screen until transaction is seen. Do not manually refresh this page.</small><br>
 </div>
