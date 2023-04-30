@@ -1,8 +1,7 @@
-package main
+package fullstack
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 )
@@ -12,7 +11,7 @@ var apiURL = "https://api.fullstack.cash/v5/electrumx"
 var transactionsMethod = "/transactions/"
 var transactionDetailsMethod = "/tx/data/"
 
-type transactionsResponse struct {
+type TransactionsResponse struct {
 	Success      bool `json:"success"`
 	Transactions []struct {
 		Height  int    `json:"height"`
@@ -20,7 +19,7 @@ type transactionsResponse struct {
 	}
 }
 
-type transactionsDetailsResponse struct {
+type TransactionsDetailsResponse struct {
 	Success      bool `json:"success"`
 	Transactions []struct {
 		Details struct {
@@ -32,7 +31,8 @@ type transactionsDetailsResponse struct {
 	}
 }
 
-func getTxsDetailsResponse(txsDetailsResp *transactionsDetailsResponse, txHashes []string) {
+func GetTxsDetailsResponse(txHashes []string) (*TransactionsDetailsResponse, error) {
+	txsDetailsResp := &TransactionsDetailsResponse{}
 	txs := strings.Join(txHashes, `","`)
 	payloadTxt := `{ "txids" : ["` + txs + `"], "verbose": false }`
 	payload := strings.NewReader(payloadTxt)
@@ -40,20 +40,24 @@ func getTxsDetailsResponse(txsDetailsResp *transactionsDetailsResponse, txHashes
 	reqTxDet.Header.Set("Content-Type", "application/json")
 	respTxDet, _ := http.DefaultClient.Do(reqTxDet)
 	if err := json.NewDecoder(respTxDet.Body).Decode(txsDetailsResp); err != nil {
-		fmt.Println(err.Error())
+		return nil, err
 	}
+	return txsDetailsResp, nil
 }
 
-func getTXs(bchAddress string, txHashes *[]string) {
+func GetTXs(bchAddress string) ([]string, error) {
+	var txsWallet []string
 	res, err := http.Get(apiURL + transactionsMethod + bchAddress)
-	if err == nil {
-		txResp := &transactionsResponse{}
-		if err := json.NewDecoder(res.Body).Decode(txResp); err != nil {
-			fmt.Println(err.Error())
-		}
-
-		for _, tx := range txResp.Transactions {
-			*txHashes = append(*txHashes, tx.Tx_Hash)
-		}
+	if err != nil {
+		return nil, err
 	}
+	txResp := &TransactionsResponse{}
+	if err := json.NewDecoder(res.Body).Decode(txResp); err != nil {
+		return nil, err
+	}
+
+	for _, tx := range txResp.Transactions {
+		txsWallet = append(txsWallet, tx.Tx_Hash)
+	}
+	return txsWallet, nil
 }

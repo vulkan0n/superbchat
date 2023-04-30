@@ -155,6 +155,7 @@ blockquote {
 
 iframe {
     height: 30px;
+    width: inherit;
 }
 
 label {
@@ -187,4 +188,3 @@ div.flash {
 b, a {
     color: #074c53;
 }
-

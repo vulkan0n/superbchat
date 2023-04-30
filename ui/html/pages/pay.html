@@ -20,10 +20,10 @@
     <img src="data:image/png;base64,{{.Form.AddressQR}}"/>
 </blockquote>
 <label>Checking for payment (every 5 seconds)
-    <a href="/check?{{.Form.CheckURL}}" target="checkframe">Manual check</a></label><br>
+    <a href="/check/{{.Form.CheckURL}}" target="checkframe">Manual check</a></label><br>
 <blockquote>
     <iframe allowtransparency="true" frameBorder="0" name="checkframe" scrolling="no"
-            src="/check?{{.Form.CheckURL}}"></iframe>
+            src="/check/{{.Form.CheckURL}}"></iframe>
 </blockquote>
 <small>You must stay on this screen until transaction is seen. Do not manually refresh this page.</small><br>
 </div>

@@ -11,8 +11,10 @@ import (
 
 type templateData struct {
 	Form            any
+	CustomStyle     string
 	Flash           string
 	IsAuthenticated bool
+	Autorefresh     bool
 	Superchats      []*models.Superchat
 }
 

@@ -24,15 +24,17 @@ type SuperchatModel struct {
 }
 
 func (m *SuperchatModel) Insert(txId string, name string, message string, amount float64,
-	isHidden bool, recipient int) error {
+	isHidden bool, recipient int) (int, error) {
 	stmt := `INSERT INTO superchat (tx_id, name, message, amount, hidden, account_id, paid, alerted, created)
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)`
-	_, err := m.DB.Exec(stmt, txId, name, message, amount, isHidden, recipient, false, false)
-	if err != nil {
-		return err
-	}
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP) RETURNING id`
+	res := m.DB.QueryRow(stmt, txId, name, message, amount, isHidden, recipient, false, false)
 
-	return nil
+	var id int
+	err := res.Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
 }
 
 func (m *SuperchatModel) Get(id int) (*Superchat, error) {
@@ -80,4 +82,22 @@ func (m *SuperchatModel) GetFromAccount(accountId int) ([]*Superchat, error) {
 	}
 
 	return superchats, nil
+}
+
+func (m *SuperchatModel) SetAsPaid(txId string, superchatId int) error {
+	stmt := `UPDATE superchat SET paid = true, tx_id = $1 WHERE id = $2`
+	_, err := m.DB.Exec(stmt, txId, superchatId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *SuperchatModel) SetAsAlerted(superchatId int) error {
+	stmt := `UPDATE superchat SET alerted = true WHERE id = $1`
+	_, err := m.DB.Exec(stmt, superchatId)
+	if err != nil {
+		return err
+	}
+	return nil
 }

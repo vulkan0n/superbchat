@@ -20,7 +20,7 @@ func (app *application) routes() http.Handler {
 
 	r.Get("/", dynamic.ThenFunc(app.index).ServeHTTP)
 	r.Post("/pay", dynamic.ThenFunc(app.payPost).ServeHTTP)
-	r.Get("/check", dynamic.ThenFunc(app.checkHandler).ServeHTTP)
+	r.Get("/check/{superchatId:[0-9]+}/{accountId:[0-9]+}", dynamic.ThenFunc(app.check).ServeHTTP)
 	r.Get("/view", protected.ThenFunc(app.view).ServeHTTP)
 	r.Get("/user/login", dynamic.ThenFunc(app.userLogin).ServeHTTP)
 	r.Post("/user/login", dynamic.ThenFunc(app.userLoginPost).ServeHTTP)
