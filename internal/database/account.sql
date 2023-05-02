@@ -7,6 +7,7 @@ CREATE TABLE account (
     message_max_char integer NOT NULL,
     min_donation numeric(16,8) NOT NULL,
     show_amount boolean NOT NULL,
+    token uuid DEFAULT gen_random_uuid(),
     created timestamp NOT NULL
 );
 

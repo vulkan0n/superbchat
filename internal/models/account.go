@@ -19,6 +19,7 @@ type Account struct {
 	MessageMaxChars     int
 	MinDonation         float64
 	IsDefaultShowAmount bool
+	Token               string
 	Created             time.Time
 }
 
@@ -85,19 +86,22 @@ func (m *AccountModel) Authenticate(username, password string) (int, error) {
 	return id, nil
 }
 
-func (m *AccountModel) Exist(id int) (bool, error) {
-	return false, nil
+func (m *AccountModel) Exist(token string) bool {
+	stmt := `SELECT id, username, password, address, name_max_char, message_max_char, min_donation, show_amount, token, created
+	FROM account WHERE token = $1`
+	_, err := GetOneByQuery(m, stmt, token)
+	return (err == nil)
 }
 
 func (m *AccountModel) Get(id int) (*Account, error) {
-	stmt := `SELECT id, username, password, address, name_max_char, message_max_char, min_donation, show_amount, created
+	stmt := `SELECT id, username, password, address, name_max_char, message_max_char, min_donation, show_amount, token, created
 	FROM account WHERE id = $1`
 
 	return GetOneByQuery(m, stmt, id)
 }
 
 func (m *AccountModel) GetByUsername(username string) (*Account, error) {
-	stmt := `SELECT id, username, password, address, name_max_char, message_max_char, min_donation, show_amount, created
+	stmt := `SELECT id, username, password, address, name_max_char, message_max_char, min_donation, show_amount, token, created
 	FROM account WHERE username = $1`
 
 	return GetOneByQuery(m, stmt, username)
@@ -108,7 +112,7 @@ func GetOneByQuery(m *AccountModel, stmt string, id any) (*Account, error) {
 
 	s := &Account{}
 	err := row.Scan(&s.Id, &s.Username, &s.HashedPassword, &s.Address, &s.NameMaxChars,
-		&s.MessageMaxChars, &s.MinDonation, &s.IsDefaultShowAmount, &s.Created)
+		&s.MessageMaxChars, &s.MinDonation, &s.IsDefaultShowAmount, &s.Token, &s.Created)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNoRecord
@@ -116,6 +120,5 @@ func GetOneByQuery(m *AccountModel, stmt string, id any) (*Account, error) {
 			return nil, err
 		}
 	}
-
 	return s, nil
 }

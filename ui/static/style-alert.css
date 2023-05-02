@@ -1,17 +1,43 @@
 body {
-    background: none transparent;
-    text-align: left;
-    color: white;
-    font-family: Arial;
-    font-size: 16px
-}
-
-@media only screen and (max-device-width: 830px) {
-    body {
-        zoom: 2
+      background: #0ac18e;
+      color: white;
+      margin: 0 auto;
+      zoom: 1.5;
+      padding: 0;
+      animation: fade-away;
+      animation-duration: 5s;
+      animation-fill-mode: forwards;
+      animation-iteration-count: 1;
     }
-}
 
-b {
-    color: #074c53
+    svg {
+      width: 48px;
+      vertical-align: middle;
+      background: white;
+      padding: 2px;
+      padding-right: 3px;
+    }
+
+    b {
+      color: #074c53;
+    }
+
+    h1 {
+      margin: 0;
+      padding: 0;
+      font-family: Arial,serif;
+    }
+
+    blockquote {
+      font-family: Arial,serif;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 16px;
+      margin-inline-start: 20px;
+    }
+
+@keyframes fade-away {
+    0%   { opacity:0 }
+    5%   { opacity:1 }
+    95%  { opacity:1 }
+    100% { opacity:0 }
 }

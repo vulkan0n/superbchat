@@ -29,15 +29,9 @@ func (app *application) routes() http.Handler {
 	r.Post("/user/signup", dynamic.ThenFunc(app.userSignupPost).ServeHTTP)
 	r.Get("/user/settings", protected.ThenFunc(app.settings).ServeHTTP)
 	r.Post("/user/settings", protected.ThenFunc(app.settingsPost).ServeHTTP)
-	r.Get("/alert/:user/:pass", notImplementedHandler())
+	r.Get("/alert/{token}", dynamic.ThenFunc(app.alert).ServeHTTP)
 	r.Get("/{user}", dynamic.ThenFunc(app.superbchat).ServeHTTP)
 
 	standard := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 	return standard.Then(r)
-}
-
-func notImplementedHandler() func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Not implemented: " + r.URL.Path))
-	}
 }

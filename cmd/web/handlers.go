@@ -2,11 +2,9 @@ package main
 
 import (
 	"encoding/base64"
-	"encoding/csv"
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/go-chi/chi"
@@ -15,17 +13,6 @@ import (
 	"github.com/vulkan0n/superbchat/internal/models"
 	"github.com/vulkan0n/superbchat/internal/validator"
 )
-
-var AlertWidgetRefreshInterval = "10"
-
-type csvLog struct {
-	ID            string
-	Name          string
-	Message       string
-	Amount        string
-	DisplayToggle string
-	Refresh       string
-}
 
 func (app *application) index(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "index.html", app.newTemplateData(r))
@@ -128,71 +115,40 @@ func remove(stringSlice []string, stringToRemove string) []string {
 	return stringSlice
 }
 
-func (app *application) alertHandler(w http.ResponseWriter, r *http.Request) {
-	password := r.URL.Query().Get("user")
-	var v csvLog
-	v.Refresh = AlertWidgetRefreshInterval
-	auth := r.URL.Query().Get("auth")
-	if auth == password {
+type alertForm struct {
+	Name    string
+	Message string
+	Amount  float64
+}
 
-		csvFile, err := os.Open("./cmd/log/alertqueue.csv")
-		if err != nil {
-			fmt.Println(err)
-		}
+func (app *application) alert(w http.ResponseWriter, r *http.Request) {
+	accountToken := chi.URLParam(r, "token")
+	if !app.accounts.Exist(accountToken) {
+		app.notFound(w, r)
+		return
+	}
+	data := app.newTemplateData(r)
+	data.CustomStyle = "style-alert.css"
+	data.Autorefresh = true
 
-		csvLines, err := csv.NewReader(csvFile).ReadAll()
-		if err != nil {
-			fmt.Println(err)
-		}
-		defer func(csvFile *os.File) {
-			err := csvFile.Close()
-			if err != nil {
-				fmt.Println(err)
-			}
-		}(csvFile)
-
-		// Remove top line of CSV file after displaying it
-		if csvLines != nil {
-			popFile, _ := os.OpenFile("./cmd/log/alertqueue.csv", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-			popFirst := csvLines[1:]
-			w := csv.NewWriter(popFile)
-			err := w.WriteAll(popFirst)
-			if err != nil {
-				fmt.Println(err)
-			}
-			defer func(popFile *os.File) {
-				err := popFile.Close()
-				if err != nil {
-					fmt.Println(err)
-				}
-			}(popFile)
-			v.ID = csvLines[0][0]
-			v.Name = csvLines[0][1]
-			v.Message = csvLines[0][2]
-			v.Amount = csvLines[0][3]
-			v.DisplayToggle = ""
+	superchat, err := app.superchats.GetOldestNotAlerted(accountToken)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			data.CustomStyle = "style-noalert.css"
 		} else {
-			v.DisplayToggle = "display: none;"
+			app.serverError(w, err)
+			return
 		}
 	} else {
-		http.Error(w, "401 Unauthorized", http.StatusUnauthorized)
-		return // return http 401 unauthorized error
+		app.superchats.SetAsAlerted(superchat.Id)
+		form := alertForm{
+			Name:    superchat.Name,
+			Message: superchat.Message,
+			Amount:  superchat.Amount,
+		}
+		data.Form = form
 	}
-	//files := []string{
-	//	"./ui/html/pages/alert.html",
-	//}
-
-	//ts, err := template.ParseFiles(files...)
-	//if err != nil {
-	//	app.errorLog.Fatal(err.Error())
-	//	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	//}
-
-	//err = ts.Execute(w, v)
-	//if err != nil {
-	//	app.errorLog.Fatal(err.Error())
-	//		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	//	}
+	app.render(w, http.StatusOK, "alert.html", data)
 }
 
 type payPostForm struct {

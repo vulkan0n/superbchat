@@ -62,25 +62,6 @@ func main() {
 		sessionManager: sessionManager,
 	}
 
-	// Create files and directory if they don't exist
-	logDirectory := "./cmd/log"
-	_ = os.Mkdir(logDirectory, os.ModePerm)
-
-	_, err = os.OpenFile(logDirectory+"/paid.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		errorLog.Fatal(err)
-	}
-
-	_, err = os.OpenFile(logDirectory+"/alertqueue.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		errorLog.Fatal(err)
-	}
-
-	_, err = os.OpenFile(logDirectory+"/superchats.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		errorLog.Fatal(err)
-	}
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8900"

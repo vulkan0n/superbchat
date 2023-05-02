@@ -84,6 +84,31 @@ func (m *SuperchatModel) GetFromAccount(accountId int) ([]*Superchat, error) {
 	return superchats, nil
 }
 
+func (m *SuperchatModel) GetOldestNotAlerted(token string) (*Superchat, error) {
+	stmt := `SELECT superchat.id,
+					superchat.name,
+					superchat.message,
+					superchat.amount
+			 FROM superchat
+			 INNER JOIN account ON superchat.account_id = account.id
+			 WHERE account.token = $1 AND
+				   superchat.paid = true AND
+				   superchat.alerted = false
+			 ORDER BY superchat.created`
+	row := m.DB.QueryRow(stmt, token)
+
+	s := &Superchat{}
+	err := row.Scan(&s.Id, &s.Name, &s.Message, &s.Amount)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+
+	return s, nil
+}
 func (m *SuperchatModel) SetAsPaid(txId string, superchatId int) error {
 	stmt := `UPDATE superchat SET paid = true, tx_id = $1 WHERE id = $2`
 	_, err := m.DB.Exec(stmt, txId, superchatId)
