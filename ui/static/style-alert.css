@@ -1,43 +1,98 @@
-body {
-      background: #0ac18e;
-      color: white;
-      margin: 0 auto;
-      zoom: 1.5;
-      padding: 0;
-      animation: fade-away;
+.widget-AlertBox {
+    position: relative;
+}
+body,
+html {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    font-family: Arial, Serif;
+    animation: fade-away;
       animation-duration: 5s;
       animation-fill-mode: forwards;
       animation-iteration-count: 1;
-    }
-
-    svg {
-      width: 48px;
-      vertical-align: middle;
-      background: white;
-      padding: 2px;
-      padding-right: 3px;
-    }
-
-    b {
-      color: #074c53;
-    }
-
-    h1 {
-      margin: 0;
-      padding: 0;
-      font-family: Arial,serif;
-    }
-
-    blockquote {
-      font-family: Arial,serif;
-      background: rgba(0, 0, 0, 0.2);
-      padding: 16px;
-      margin-inline-start: 20px;
-    }
+}
 
 @keyframes fade-away {
     0%   { opacity:0 }
-    5%   { opacity:1 }
+    10%   { opacity:1 }
     95%  { opacity:1 }
     100% { opacity:0 }
+}
+
+#wrap {
+    position: relative;
+    height: 100%;
+    width: 100%;
+}
+#alert-box {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+}
+#alert-box.hidden,
+.hidden {
+    opacity: 0;
+}
+#alert-text {
+    padding: 20px;
+    text-shadow: 0px 0px 1px #000, 0px 0px 2px #000, 0px 0px 3px #000, 0px 0px 4px #000, 0px 0px 5px #000;
+}
+#alert-message{
+    text-align: center;
+    font-size: 68px;
+    font-weight: 800;
+    color: white
+}
+#alert-user-message {
+    text-align: center;
+    font-size: 35px;
+    font-weight: 400;
+    color: white
+}
+
+b {
+  color: #089b72;
+}
+
+#alert-user-message img {
+    vertical-align: middle;
+    height: 1em;
+    margin: auto;
+    width: -webkit-fill-available;
+}
+
+img {
+    vertical-align: middle;
+    margin: auto;
+    width: -webkit-fill-available;
+}
+
+#alert-image {
+    position: relative;
+    height: 50%;
+    width: 35%;
+    margin: auto;
+}
+#alert-image video {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+#alert-message > span > span {
+    display: inline-block;
+}
+#alert-image {
+    z-index: 6;
+    position: relative;
+   }
+#alert-text {
+    z-index: 6;
+    position: relative;
+}
+#alert-text-wrap {
+    z-index: 6;
+    position: relative;
 }

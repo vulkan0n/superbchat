@@ -88,7 +88,8 @@ func (m *SuperchatModel) GetOldestNotAlerted(token string) (*Superchat, error) {
 	stmt := `SELECT superchat.id,
 					superchat.name,
 					superchat.message,
-					superchat.amount
+					superchat.amount,
+					superchat.hidden
 			 FROM superchat
 			 INNER JOIN account ON superchat.account_id = account.id
 			 WHERE account.token = $1 AND
@@ -98,7 +99,7 @@ func (m *SuperchatModel) GetOldestNotAlerted(token string) (*Superchat, error) {
 	row := m.DB.QueryRow(stmt, token)
 
 	s := &Superchat{}
-	err := row.Scan(&s.Id, &s.Name, &s.Message, &s.Amount)
+	err := row.Scan(&s.Id, &s.Name, &s.Message, &s.Amount, &s.IsHidden)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNoRecord

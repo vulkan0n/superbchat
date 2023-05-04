@@ -116,9 +116,10 @@ func remove(stringSlice []string, stringToRemove string) []string {
 }
 
 type alertForm struct {
-	Name    string
-	Message string
-	Amount  float64
+	Name     string
+	Message  string
+	Amount   float64
+	IsHidden bool
 }
 
 func (app *application) alert(w http.ResponseWriter, r *http.Request) {
@@ -142,9 +143,10 @@ func (app *application) alert(w http.ResponseWriter, r *http.Request) {
 	} else {
 		app.superchats.SetAsAlerted(superchat.Id)
 		form := alertForm{
-			Name:    superchat.Name,
-			Message: superchat.Message,
-			Amount:  superchat.Amount,
+			Name:     superchat.Name,
+			Message:  superchat.Message,
+			Amount:   superchat.Amount,
+			IsHidden: superchat.IsHidden,
 		}
 		data.Form = form
 	}
