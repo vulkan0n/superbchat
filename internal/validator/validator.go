@@ -1,12 +1,12 @@
 package validator
 
 import (
-	"regexp"
+	"errors"
 	"strings"
 	"unicode/utf8"
-)
 
-var AddressRX = regexp.MustCompile(`^(bitcoincash\:)?[a-zA-HJ-NP-Z0-9]{25,42}$`)
+	"github.com/vulkan0n/superbchat/internal/fullstack"
+)
 
 type Validator struct {
 	NonFieldErrors []string
@@ -52,6 +52,10 @@ func EqualValue(value1, value2 string) bool {
 	return value1 == value2
 }
 
-func Matches(value string, rx *regexp.Regexp) bool {
-	return rx.MatchString(value)
+func ValidAddress(bchAddress string) bool {
+	_, err := fullstack.GetTXs(bchAddress)
+	if errors.Is(err, fullstack.ErrInvalidAddrFormat) {
+		return false
+	}
+	return true
 }

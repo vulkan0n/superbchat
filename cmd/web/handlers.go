@@ -78,7 +78,7 @@ func (app *application) settingsPost(w http.ResponseWriter, r *http.Request) {
 
 	form.CheckField(validator.MaxChars(form.NameMaxChars, 100), "nameMaxChars", "Must be less than 100 characters long")
 	form.CheckField(validator.MaxChars(form.MessageMaxChars, 1000), "msgMaxChars", "Must be less than 1000 characters long")
-	form.CheckField(validator.Matches(form.Address, validator.AddressRX), "address", "Invalid address format")
+	form.CheckField(validator.ValidAddress(form.Address), "address", "Invalid address format")
 
 	if !form.IsValid() {
 		data := app.newTemplateData(r)
@@ -308,7 +308,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
 	form.CheckField(validator.MinChars(form.Password, 8), "password", "Must be at least 8 characters long")
 	form.CheckField(validator.EqualValue(form.Password, form.RepeatedPassword), "repeatedPassword", "Password doesn't match")
-	form.CheckField(validator.Matches(form.Address, validator.AddressRX), "address", "Invalid address format")
+	form.CheckField(validator.ValidAddress(form.Address), "address", "Invalid address format")
 
 	if !form.IsValid() {
 		data := app.newTemplateData(r)

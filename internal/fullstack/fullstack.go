@@ -2,6 +2,7 @@ package fullstack
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 )
@@ -11,13 +12,7 @@ var apiURL = "https://api.fullstack.cash/v5/electrumx"
 var transactionsMethod = "/transactions/"
 var transactionDetailsMethod = "/tx/data/"
 
-type TransactionsResponse struct {
-	Success      bool `json:"success"`
-	Transactions []struct {
-		Height  int    `json:"height"`
-		Tx_Hash string `json:"tx_hash"`
-	}
-}
+var ErrInvalidAddrFormat = errors.New("fullstack: Unsupported address format")
 
 type TransactionsDetailsResponse struct {
 	Success      bool `json:"success"`
@@ -45,6 +40,15 @@ func GetTxsDetailsResponse(txHashes []string) (*TransactionsDetailsResponse, err
 	return txsDetailsResp, nil
 }
 
+type TransactionsResponse struct {
+	Success      bool `json:"success"`
+	Transactions []struct {
+		Height  int    `json:"height"`
+		Tx_Hash string `json:"tx_hash"`
+	}
+	Error string `json:"error"`
+}
+
 func GetTXs(bchAddress string) ([]string, error) {
 	var txsWallet []string
 	res, err := http.Get(apiURL + transactionsMethod + bchAddress)
@@ -54,6 +58,13 @@ func GetTXs(bchAddress string) ([]string, error) {
 	txResp := &TransactionsResponse{}
 	if err := json.NewDecoder(res.Body).Decode(txResp); err != nil {
 		return nil, err
+	}
+	if !txResp.Success {
+		if strings.Contains(txResp.Error, "Unsupported address format") {
+			return nil, ErrInvalidAddrFormat
+		} else {
+			return nil, errors.New(txResp.Error)
+		}
 	}
 
 	for _, tx := range txResp.Transactions {
