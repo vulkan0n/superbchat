@@ -18,6 +18,11 @@ func (app *application) index(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "index.html", app.newTemplateData(r))
 }
 
+type viewForm struct {
+	AlertURL      string
+	SuperbchatURL string
+}
+
 func (app *application) view(w http.ResponseWriter, r *http.Request) {
 	accountId := app.sessionManager.GetInt(r.Context(), "authAccountId")
 
@@ -32,9 +37,19 @@ func (app *application) view(w http.ResponseWriter, r *http.Request) {
 			paidSuperchats = append(paidSuperchats, superchat)
 		}
 	}
+	account, err := app.accounts.Get(accountId)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	form := viewForm{
+		SuperbchatURL: fmt.Sprintf("/%v", account.Username),
+		AlertURL:      fmt.Sprintf("%v/alert/%v", r.Host, account.Token),
+	}
 
 	data := app.newTemplateData(r)
 	data.Superchats = paidSuperchats
+	data.Form = form
 	app.render(w, http.StatusOK, "view.html", data)
 }
 

@@ -67,8 +67,16 @@ button.user-button{
     display: inline-block;
     background-color: white;
     border-radius: 0.25rem;
-    padding:8px 28px;
+    padding:6px 25px;
     text-decoration: none;
+}
+
+.superbchat-button{
+    height: 20px;
+}
+
+img.superbchat-button{
+    height: 100%;
 }
 
 .user-button:hover{
@@ -78,7 +86,7 @@ button.user-button{
 .view-buttons-box{
     display: inline-block;
     float: right;
-    margin-top: 30px;
+    margin-top: 5px;
 }
 
 .superchat-header{
@@ -148,7 +156,7 @@ blockquote {
     min-height: 24px;
     margin: 6px;
     padding: 7px 14px;
-    width: 100%;
+    width: 99%;
     word-break: break-all;
     word-wrap: break-word;
 }
@@ -187,4 +195,9 @@ div.flash {
 
 b, a {
     color: #074c53;
+}
+
+.alert-url-box {
+    margin: 40px 0px 15px;
+    width: max-content;
 }

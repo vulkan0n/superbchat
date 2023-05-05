@@ -15,7 +15,7 @@
     <label class="error">{{.}}</label><br>
     {{end}}
     <input id="minDonation" name="minDonation"
-    value="{{.Form.MinDonation}}" step="0.00001" type="number" min="0.00001">
+    value="{{.Form.MinDonation}}" step="0.00001" type="number" min="0.0001">
 
     <label for="nameMaxChars">Donor name max. character lenght:</label><br>
     {{with .Form.FieldErrors.nameMaxChars}}
