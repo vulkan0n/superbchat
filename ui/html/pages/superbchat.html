@@ -11,8 +11,8 @@
     <label for="message">Message:</label><br>
     <textarea id="message" maxlength="{{.Form.MsgMaxChars}}" name="message" placeholder="{{.Form.MsgMaxChars}} character max"
               rows="6"></textarea><br>
-    <button id="submit" type="submit"><img src=/static/bitcoin-cash-bch-logo.svg> Pay</button>
-    <input id="showAmount" name="showAmount" type="checkbox" value="true" {{if .Form.Checked}}checked{{end}}>
-    <small><label for="showAmount">Show amount on stream?</label><small>
+    <button id="pay-button" class="submit" type="submit"><img src=/static/bitcoin-cash-bch-logo.svg> Pay</button>
+    <input id="showAmount-checkbox" class="showAmount" name="showAmount" type="checkbox" value="true" {{if .Form.Checked}}checked{{end}}>
+    <small><label class="showAmount-label" for="showAmount">Show amount on stream?</label><small>
 </form>
 {{end}}
