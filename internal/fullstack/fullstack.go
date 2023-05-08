@@ -3,6 +3,7 @@ package fullstack
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -26,11 +27,12 @@ type TransactionsDetailsResponse struct {
 	}
 }
 
-func GetTxsDetailsResponse(txHashes []string) (*TransactionsDetailsResponse, error) {
+func GetTxsDetailsResponse(txHashes []string, infoLog *log.Logger) (*TransactionsDetailsResponse, error) {
 	txsDetailsResp := &TransactionsDetailsResponse{}
 	txs := strings.Join(txHashes, `","`)
 	payloadTxt := `{ "txids" : ["` + txs + `"], "verbose": false }`
 	payload := strings.NewReader(payloadTxt)
+	infoLog.Printf("FULLSTACK - POST %s", transactionDetailsMethod)
 	reqTxDet, _ := http.NewRequest("POST", apiURL+transactionDetailsMethod, payload)
 	reqTxDet.Header.Set("Content-Type", "application/json")
 	respTxDet, _ := http.DefaultClient.Do(reqTxDet)
@@ -49,8 +51,9 @@ type TransactionsResponse struct {
 	Error string `json:"error"`
 }
 
-func GetTXs(bchAddress string) ([]string, error) {
+func GetTXs(bchAddress string, infoLog *log.Logger) ([]string, error) {
 	var txsWallet []string
+	infoLog.Printf("FULLSTACK - GET %s", transactionsMethod)
 	res, err := http.Get(apiURL + transactionsMethod + bchAddress)
 	if err != nil {
 		return nil, err
@@ -66,9 +69,13 @@ func GetTXs(bchAddress string) ([]string, error) {
 			return nil, errors.New(txResp.Error)
 		}
 	}
-
 	for _, tx := range txResp.Transactions {
 		txsWallet = append(txsWallet, tx.Tx_Hash)
 	}
+
+	if len(txsWallet) > 20 {
+		txsWallet = txsWallet[:20]
+	}
+
 	return txsWallet, nil
 }

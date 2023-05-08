@@ -2,6 +2,7 @@ package validator
 
 import (
 	"errors"
+	"log"
 	"strings"
 	"unicode/utf8"
 
@@ -52,8 +53,8 @@ func EqualValue(value1, value2 string) bool {
 	return value1 == value2
 }
 
-func ValidAddress(bchAddress string) bool {
-	_, err := fullstack.GetTXs(bchAddress)
+func ValidAddress(bchAddress string, infoLog *log.Logger) bool {
+	_, err := fullstack.GetTXs(bchAddress, infoLog)
 	if errors.Is(err, fullstack.ErrInvalidAddrFormat) {
 		return false
 	}

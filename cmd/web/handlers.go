@@ -93,7 +93,7 @@ func (app *application) settingsPost(w http.ResponseWriter, r *http.Request) {
 
 	form.CheckField(validator.MaxChars(form.NameMaxChars, 100), "nameMaxChars", "Must be less than 100 characters long")
 	form.CheckField(validator.MaxChars(form.MessageMaxChars, 1000), "msgMaxChars", "Must be less than 1000 characters long")
-	form.CheckField(validator.ValidAddress(form.Address), "address", "Invalid address format")
+	form.CheckField(validator.ValidAddress(form.Address, app.infoLog), "address", "Invalid address format")
 
 	if !form.IsValid() {
 		data := app.newTemplateData(r)
@@ -236,6 +236,25 @@ type checkForm struct {
 func (app *application) check(w http.ResponseWriter, r *http.Request) {
 	superchatId, _ := strconv.Atoi(chi.URLParam(r, "superchatId"))
 	accountId, _ := strconv.Atoi(chi.URLParam(r, "accountId"))
+
+	currentSuperchat, err := app.superchats.Get(superchatId)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	if currentSuperchat.IsPaid {
+		form := checkForm{
+			Autorefresh: false,
+			Receipt:     fmt.Sprintf("%f BCH Received! Superchat sent", currentSuperchat.Amount),
+		}
+		data := app.newTemplateData(r)
+		data.CustomStyle = "style-check.css"
+		data.Autorefresh = form.Autorefresh
+		data.Form = form
+		app.render(w, http.StatusOK, "check.html", data)
+		return
+	}
+
 	accountSuperchats, err := app.superchats.GetFromAccount(accountId)
 	if err != nil {
 		app.serverError(w, err)
@@ -251,45 +270,33 @@ func (app *application) check(w http.ResponseWriter, r *http.Request) {
 		Receipt:     "Waiting for payment...",
 		Autorefresh: true,
 	}
-	txsWallet, err := fullstack.GetTXs(account.Address)
+	txsWallet, err := fullstack.GetTXs(account.Address, app.infoLog)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
-	var currentSuperchat models.Superchat
+
 	for _, superchat := range accountSuperchats {
-		if superchat.Id == superchatId {
-			currentSuperchat = *superchat
-		}
 		if superchat.IsPaid {
 			txsWallet = remove(txsWallet, superchat.TxId)
 		}
 	}
 
-	txsBatchSize := 20
-
-	for i := 0; i < len(txsWallet); i += txsBatchSize {
-		j := i + txsBatchSize
-		if j > len(txsWallet) {
-			j = len(txsWallet)
-		}
-		txsBatch := txsWallet[i:j]
-		txsDetailsResp, err := fullstack.GetTxsDetailsResponse(txsBatch)
-		if err != nil {
-			app.serverError(w, err)
-			return
-		}
-		for _, tx := range txsDetailsResp.Transactions {
-			for _, vout := range tx.Details.Vout {
-				if vout.Value == currentSuperchat.Amount {
-					app.superchats.SetAsPaid(tx.TxId, currentSuperchat.Id)
-					form.Autorefresh = false
-					form.Receipt = fmt.Sprintf("%f BCH Received! Superchat sent", currentSuperchat.Amount)
-				}
+	txsDetailsResp, err := fullstack.GetTxsDetailsResponse(txsWallet, app.infoLog)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	for _, tx := range txsDetailsResp.Transactions {
+		for _, vout := range tx.Details.Vout {
+			if vout.Value == currentSuperchat.Amount {
+				app.superchats.SetAsPaid(tx.TxId, currentSuperchat.Id)
+				form.Autorefresh = false
+				form.Receipt = fmt.Sprintf("%f BCH Received! Superchat sent", currentSuperchat.Amount)
 			}
 		}
-
 	}
+
 	data := app.newTemplateData(r)
 	data.CustomStyle = "style-check.css"
 	data.Autorefresh = form.Autorefresh
@@ -323,7 +330,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
 	form.CheckField(validator.MinChars(form.Password, 8), "password", "Must be at least 8 characters long")
 	form.CheckField(validator.EqualValue(form.Password, form.RepeatedPassword), "repeatedPassword", "Password doesn't match")
-	form.CheckField(validator.ValidAddress(form.Address), "address", "Invalid address format")
+	form.CheckField(validator.ValidAddress(form.Address, app.infoLog), "address", "Invalid address format")
 
 	if !form.IsValid() {
 		data := app.newTemplateData(r)
