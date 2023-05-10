@@ -13,4 +13,4 @@ GPLv3
 ### Donate
 
 sir,thank you
-`bitcoincash:qpwcmmp5636akgpz8m07zhefgykczegekv5hvwsd24`
+`bitcoincash:qzq6e8hmn6f3u2hu2t3l5kgrd5vjlx0epgpvmnmy7j`
