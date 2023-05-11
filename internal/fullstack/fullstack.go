@@ -14,6 +14,7 @@ var transactionsMethod = "/transactions/"
 var transactionDetailsMethod = "/tx/data/"
 
 var ErrInvalidAddrFormat = errors.New("fullstack: Unsupported address format")
+var ErrTooManyRequests = errors.New("fullstack: Too many requests")
 
 type TransactionsDetailsResponse struct {
 	Success      bool `json:"success"`
@@ -35,10 +36,18 @@ func GetTxsDetailsResponse(txHashes []string, infoLog *log.Logger) (*Transaction
 	infoLog.Printf("FULLSTACK - POST %s", transactionDetailsMethod)
 	reqTxDet, _ := http.NewRequest("POST", apiURL+transactionDetailsMethod, payload)
 	reqTxDet.Header.Set("Content-Type", "application/json")
-	respTxDet, _ := http.DefaultClient.Do(reqTxDet)
+	respTxDet, err := http.DefaultClient.Do(reqTxDet)
+	if err != nil {
+		return nil, err
+	}
+	if respTxDet.StatusCode == http.StatusTooManyRequests {
+		infoLog.Printf("FULLSTACK - ERROR: Too many requests")
+		return nil, ErrTooManyRequests
+	}
 	if err := json.NewDecoder(respTxDet.Body).Decode(txsDetailsResp); err != nil {
 		return nil, err
 	}
+
 	return txsDetailsResp, nil
 }
 
@@ -57,6 +66,10 @@ func GetTXs(bchAddress string, infoLog *log.Logger) ([]string, error) {
 	res, err := http.Get(apiURL + transactionsMethod + bchAddress)
 	if err != nil {
 		return nil, err
+	}
+	if res.StatusCode == http.StatusTooManyRequests {
+		infoLog.Printf("FULLSTACK - ERROR: Too many requests")
+		return nil, ErrTooManyRequests
 	}
 	txResp := &TransactionsResponse{}
 	if err := json.NewDecoder(res.Body).Decode(txResp); err != nil {

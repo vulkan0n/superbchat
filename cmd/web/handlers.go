@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/skip2/go-qrcode"
@@ -212,7 +214,12 @@ func (app *application) payPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmp, _ := qrcode.Encode(fmt.Sprintf("%s?amount=%f", account.Address, postForm.Amount), qrcode.Low, 320)
+	qrAddress := account.Address
+	if !strings.Contains(qrAddress, "bitcoincash:") {
+		qrAddress = "bitcoincash:" + account.Address
+	}
+
+	tmp, _ := qrcode.Encode(fmt.Sprintf("%s?amount=%f", qrAddress, postForm.Amount), qrcode.Low, 320)
 
 	form := payForm{
 		Amount:    postForm.Amount,
@@ -272,6 +279,15 @@ func (app *application) check(w http.ResponseWriter, r *http.Request) {
 	}
 	txsWallet, err := fullstack.GetTXs(account.Address, app.infoLog)
 	if err != nil {
+		if errors.Is(err, fullstack.ErrTooManyRequests) {
+			time.Sleep(3 * time.Second)
+			data := app.newTemplateData(r)
+			data.CustomStyle = "style-check.css"
+			data.Autorefresh = form.Autorefresh
+			data.Form = form
+			app.render(w, http.StatusOK, "check.html", data)
+			return
+		}
 		app.serverError(w, err)
 		return
 	}
@@ -284,6 +300,15 @@ func (app *application) check(w http.ResponseWriter, r *http.Request) {
 
 	txsDetailsResp, err := fullstack.GetTxsDetailsResponse(txsWallet, app.infoLog)
 	if err != nil {
+		if errors.Is(err, fullstack.ErrTooManyRequests) {
+			time.Sleep(3 * time.Second)
+			data := app.newTemplateData(r)
+			data.CustomStyle = "style-check.css"
+			data.Autorefresh = form.Autorefresh
+			data.Form = form
+			app.render(w, http.StatusOK, "check.html", data)
+			return
+		}
 		app.serverError(w, err)
 		return
 	}
