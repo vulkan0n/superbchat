@@ -9,16 +9,22 @@ export default {
     onMounted(async () => {
       const wallet = await Wallet.newRandom();
       walletAddress.value = wallet.address;
-      console.log(walletAddress.value)
+      console.log(walletAddress.value);
     });
-    return {walletAddress}
+    return { walletAddress };
   },
 };
 </script>
 
 <template>
+  <div class="wrapper">
+    <nav>
+      <RouterLink to="/user/login">Login</RouterLink>
+      <RouterLink to="/user/signup">Signup</RouterLink>
+    </nav>
+  </div>
   <main>
-    <h2>{{ walletAddress }}</h2>
+    <h3>{{ walletAddress }}</h3>
     <qr-code
       :contents="walletAddress"
       module-color="#1c7d43"
@@ -33,5 +39,7 @@ export default {
 </template>
 
 <style scoped>
-.qr {width: 30rem;}
+.qr {
+  width: 25rem;
+}
 </style>

@@ -29,11 +29,16 @@ const router = createRouter({
       name: 'dashboard',
       component: () => import('../views/DashboardView.vue')
     },
-    // {
-    //   path: '/{user}',
-    //   name: 'superbchat',
-    //   component: () => import('../views/SuperbchatView.vue')
-    // }
+    {
+      path: '/:user',
+      name: 'superbchat',
+      component: () => import('../views/SuperbchatView.vue')
+    },
+    {
+      path: '/404',
+      name: '404',
+      component: () => import('../views/404View.vue')
+    }
   ]
 })
 

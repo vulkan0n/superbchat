@@ -9,30 +9,28 @@ export default {
 
 <template>
   <header>
-    <img
-      alt="BCH logo"
-      class="logo"
-      src="@/assets/bitcoin-cash-bch-logo.svg"
-      width="125"
-      height="125"
-    />
-
-    <div class="wrapper">
-      <h1>Superbchat!</h1>
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/user/login">Login</RouterLink>
-        <RouterLink to="/user/signup">Signup</RouterLink>
-        <RouterLink to="/user/settings">Settings</RouterLink>
-        <RouterLink to="/dashboard">Dashboard</RouterLink>
-      </nav>
-    </div>
+    <RouterLink to="/">
+      <div class="title">
+        <img
+          alt="BCH logo"
+          class="logo"
+          src="@/assets/bitcoin-cash-bch-logo.svg"
+          width="45"
+          height="45"
+        />
+        <h1>Superbchat!</h1>
+      </div>
+    </RouterLink>
   </header>
-
   <RouterView />
 </template>
 
 <style scoped>
+.title {
+  display: flex;
+  place-items: center;
+}
+
 header {
   line-height: 1.5;
   max-height: 100vh;
@@ -40,7 +38,7 @@ header {
 
 .logo {
   display: block;
-  margin: 0 auto 2rem;
+  margin: 0 1rem 0 0;
 }
 
 nav {
@@ -70,13 +68,11 @@ nav a:first-of-type {
 
 @media (min-width: 1024px) {
   header {
-    display: flex;
-    place-items: center;
     padding-right: calc(var(--section-gap) / 2);
   }
 
   .logo {
-    margin: 0 2rem 0 0;
+    margin: 0 1rem 0 0;
   }
 
   header .wrapper {
