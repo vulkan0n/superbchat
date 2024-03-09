@@ -1,45 +1,53 @@
 <script>
-import { onMounted, ref } from "vue";
-import { Wallet } from "mainnet-js";
-
-const walletAddress = ref();
-
+import { RouterLink } from "vue-router";
 export default {
   setup() {
-    onMounted(async () => {
-      const wallet = await Wallet.newRandom();
-      walletAddress.value = wallet.address;
-      console.log(walletAddress.value);
-    });
-    return { walletAddress };
+    return { RouterLink };
   },
 };
 </script>
 
 <template>
-  <div class="wrapper">
-    <nav>
-      <RouterLink to="/user/login">Login</RouterLink>
-      <RouterLink to="/user/signup">Signup</RouterLink>
-    </nav>
+  <div class="flex flex-col h-screen justify-center items-center">
+    <div class="max-w-lg mx-4 space-y-10 text-gray-600">
+      <div class="max-w-lg mx-4 space-y-10 text-gray-600">
+        <div class="relative w-full">
+          <div
+            class="rounded-lg shadow-lg p-8 bg-white m-auto text-center w-full overflow-hidden overflow-ellipsis"
+          >
+            <b>What is Superbchat?</b><br /><br />
+            <p>Use this web app to receive superchats in your stream.</p>
+            <p>
+              Sign up to create your superbchat and start receiving donations,
+              or Log in to access your received messages and get your alert URL
+              to set up in OBS
+            </p>
+            <p>
+              You can check the source code
+              <a
+                href="https://github.com/vulkan0n/superbchat"
+                class="text-green-500 underline"
+                >Here</a
+              >.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div
+        class="flex flex-wrap flex-col sm:flex-row sm:space-x-4 items-center justify-center pb-8 sm:pb-0"
+      >
+        <div>
+          <a
+            href="https://whybitcoincash.com/"
+            target="_blank"
+            class="text-green-500 underline"
+            >Why Bitcoin Cash?</a
+          >
+        </div>
+        <div>
+          <RouterLink to="/user/signup" class="text-green-500 underline">Create a superbchat page</RouterLink>
+        </div>
+      </div>
+    </div>
   </div>
-  <main>
-    <h3>{{ walletAddress }}</h3>
-    <qr-code
-      :contents="walletAddress"
-      module-color="#1c7d43"
-      position-ring-color="#13532d"
-      position-center-color="#70c559"
-      style="background-color: #fff"
-      class="qr"
-    >
-      <img src="../assets/bch.svg" slot="icon" />
-    </qr-code>
-  </main>
 </template>
-
-<style scoped>
-.qr {
-  width: 25rem;
-}
-</style>
