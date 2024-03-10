@@ -2,7 +2,7 @@
 import { useRouter, useRoute } from "vue-router";
 import { onBeforeMount } from "vue";
 import { onMounted, ref } from "vue";
-import { Wallet } from "mainnet-js";
+import { BaseWallet, Wallet } from "mainnet-js";
 
 const fakeUsers = ["vulkan0n", "pepe"];
 const walletAddress = ref();
@@ -17,9 +17,10 @@ export default {
     });
 
     onMounted(async () => {
-      const wallet = await Wallet.newRandom();
+      BaseWallet.StorageProvider = IndexedDBProvider;
+      const wallet = await Wallet.named(`user:${user}`);
+      console.log(wallet);
       walletAddress.value = wallet.address;
-      console.log(walletAddress.value);
     });
 
     return { user, walletAddress };

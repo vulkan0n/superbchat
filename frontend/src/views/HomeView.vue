@@ -19,8 +19,8 @@ export default {
             <p>Use this web app to receive superchats in your stream.</p>
             <p>
               Sign up to create your superbchat and start receiving donations,
-              or Log in to access your received messages and get your alert URL
-              to set up in OBS
+              or Login to access your received messages and get your alert URL
+              to set up in OBS.
             </p>
             <p>
               You can check the source code
