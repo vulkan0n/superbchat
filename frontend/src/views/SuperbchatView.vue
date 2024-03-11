@@ -1,35 +1,36 @@
 <script>
 import { useRouter, useRoute } from "vue-router";
-import { onBeforeMount } from "vue";
 import { onMounted, ref } from "vue";
 import { BaseWallet, Wallet } from "mainnet-js";
 
 const fakeUsers = ["vulkan0n", "pepe"];
 const walletAddress = ref();
+const isValidUser = ref(true);
 
 export default {
   setup() {
     const user = useRoute().params.user;
     const router = useRouter();
 
-    onBeforeMount(() => {
-      if (!fakeUsers.includes(user)) router.push({ name: "404" });
-    });
-
     onMounted(async () => {
-      BaseWallet.StorageProvider = IndexedDBProvider;
-      const wallet = await Wallet.named(`user:${user}`);
-      console.log(wallet);
-      walletAddress.value = wallet.address;
+      if (!fakeUsers.includes(user)) {
+        router.push({ name: "404" });
+        isValidUser.value = false;
+      } else {
+        BaseWallet.StorageProvider = IndexedDBProvider;
+        const wallet = await Wallet.named(`user:${user}`);
+        console.log(wallet);
+        walletAddress.value = wallet.address;
+      }
     });
 
-    return { user, walletAddress };
+    return { user, walletAddress, isValidUser };
   },
 };
 </script>
 
 <template>
-  <main>
+  <main v-show="isValidUser">
     <h1>Superbchat {{ user }}</h1>
 
     <h3>{{ walletAddress }}</h3>
