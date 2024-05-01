@@ -16,10 +16,10 @@ export default {
             class="rounded-lg shadow-lg p-8 bg-white m-auto text-center w-full overflow-hidden overflow-ellipsis"
           >
             <b>What is Superbchat?</b><br /><br />
-            <p>Use this web app to receive superchats in your stream.</p>
+            <p>Use this web app to receive BCH superchats in your stream.</p>
             <p>
-              Sign up to create your superbchat and start receiving donations,
-              or Login to access your received messages and get your alert URL
+              <RouterLink to="/user/signup" class="text-green-500 underline">Sign up</RouterLink> to create your superbchat and start receiving donations,
+              or <RouterLink to="/user/login" class="text-green-500 underline">Login</RouterLink> to access your received messages and get your alert URL
               to set up in OBS.
             </p>
             <p>
@@ -38,7 +38,7 @@ export default {
       >
         <div>
           <a
-            href="https://whybitcoincash.com/"
+            href="https://discover.cash/"
             target="_blank"
             class="text-green-500 underline"
             >Why Bitcoin Cash?</a
