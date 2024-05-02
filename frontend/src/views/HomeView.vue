@@ -9,8 +9,8 @@ export default {
 
 <template>
   <div class="flex flex-col h-screen justify-center items-center">
-    <div class="max-w-lg mx-4 space-y-10 text-gray-600">
-      <div class="max-w-lg mx-4 space-y-10 text-gray-600">
+    <div class="max-w-xl mx-4 space-y-10 text-gray-600">
+      <div class="max-w-xl mx-4 space-y-10 text-gray-600">
         <div class="relative w-full">
           <div
             class="rounded-lg shadow-lg p-8 bg-white m-auto text-center w-full overflow-hidden overflow-ellipsis"
