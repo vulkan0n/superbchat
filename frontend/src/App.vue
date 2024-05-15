@@ -19,7 +19,7 @@ export default {
 </script>
 
 <template>
-  <div class="bg-gray-200 flex flex-col">
+  <div class="bg-gray-200 flex flex-col min-h-screen">
     <header
       v-show="routesWithHeader.includes(route.name)"
       class="max-w-6xl w-full flex justify-end m-auto mt-4 pr-4"
