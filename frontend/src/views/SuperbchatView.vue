@@ -79,7 +79,7 @@ export default {
 </script>
 
 <template>
-  <div class="flex flex-col h-screen items-center">
+  <div class="flex flex-col items-center">
     <div class="max-w-lg mx-4 space-y-10 text-gray-600">
       <div class="max-w-lg mx-4 space-y-10 text-gray-600">
         <div class="relative w-full">
