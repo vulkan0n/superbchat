@@ -142,7 +142,7 @@ export default {
             <div class="mb-6">
               <label class="block text-gray-500 font-bold">
                 <input
-                  class="mr-2 leading-tight"
+                  class="mr-2 leading-tight accent-green-700"
                   type="checkbox"
                   v-model="showAmount"
                 />
@@ -154,7 +154,6 @@ export default {
             >
               <li class="me-2">
                 <a
-                  href="#"
                   aria-current="page"
                   :class="isCashAddrs ? unselectedTabClass : selectedTabClass"
                   @click="onQRChange"
@@ -163,7 +162,6 @@ export default {
               </li>
               <li class="me-2">
                 <a
-                  href="#"
                   :class="isCashAddrs ? selectedTabClass : unselectedTabClass"
                   @click="onQRChange"
                   >Cash Address</a
