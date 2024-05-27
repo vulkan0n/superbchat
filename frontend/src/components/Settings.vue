@@ -35,7 +35,7 @@ export default {
 </script>
 
 <template>
-  <div class="flex flex-col h-screen justify-center items-center">
+  <div class="flex flex-col  justify-center items-center">
     <div class="max-w-lg mx-4 space-y-10 text-gray-600">
       <div class="max-w-lg mx-4 space-y-10 text-gray-600">
         <div class="relative w-full">
@@ -77,13 +77,13 @@ export default {
             </div>
             <div class="mb-6">
               <label class="block text-gray-500 font-bold">
-                <input class="mr-2 leading-tight" type="checkbox" v-model="defaultShowAmount" />
+                <input class="mr-2 leading-tight accent-emerald-700" type="checkbox" v-model="defaultShowAmount" />
                 <span class="text-sm"> Default "Show Amount" checked </span>
               </label>
             </div>
             <div class="flex items-center justify-between">
               <button
-                class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                 type="button"
                 @click="verifyAndUpdateSettings"
               >

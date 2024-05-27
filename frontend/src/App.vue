@@ -74,7 +74,7 @@ export default {
         </div>
       </div>
     </header>
-    <div class="mt-2 flex-1 flex items-center justify-center flex-col">
+    <div :class="route.name != 'dashboard' ? 'mt-2 flex-1 flex items-center justify-center flex-col' : ''">
       <RouterView />
     </div>
   </div>
