@@ -103,7 +103,7 @@ export default {
       </div>
     </div>
   </nav>
-  <div class="mt-24 mb-14 mx-20">
+  <div class="mt-24 mb-14 mx-3 md:mx-20">
     <dashboard v-show="selectedTab == 'Dashboard'" />
     <settings v-show="selectedTab == 'Settings'" />
     <wallet v-show="selectedTab == 'Wallet'" />
