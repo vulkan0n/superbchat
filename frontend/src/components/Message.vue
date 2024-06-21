@@ -1,6 +1,4 @@
 <script>
-import { ref } from "vue";
-
 export default {
   props: {
     sender: {
@@ -29,7 +27,7 @@ export default {
     },
     tknAmount: {
       type: Number,
-      required: true,
+      required: false,
     },
     tknLogo: {
       type: String,
@@ -74,7 +72,7 @@ export default {
             class="mr-2 w-6 h-6 rounded-full"
             :src="tknLogo"
             alt="Token Logo"
-            />{{ sender }} ({{ tknAmount }} {{tknSymbol}})
+          />{{ sender }} ({{ tknAmount }} {{ tknSymbol }})
         </p>
         <p class="text-sm text-gray-600 dark:text-gray-400">
           <time pubdate="" :title="createdDateStr">{{ createdDateStr }}</time>

@@ -1,7 +1,7 @@
 <script>
 import Message from "./Message.vue";
 import { ref, onMounted } from "vue";
-const fakeAlertUrl =
+const fakeAlertUrlObj =
   "192.168.100.6:8900/alert/81f1cd27-d510-4579-97c8-9613e5f63fb2";
 
 const fakeMessagesObj = [
@@ -33,7 +33,8 @@ const fakeMessagesObj = [
 export default {
   components: { Message },
   setup() {
-    const fakeMessages = ref();
+    const fakeMessages = ref('');
+    const fakeAlertUrl = ref('');
     const copiedUrl = ref(false);
 
     const unsecuredCopyToClipboard = (text) => {
@@ -51,7 +52,7 @@ export default {
     };
 
     const copyToClipboard = () => {
-      var content = fakeAlertUrl;
+      var content = fakeAlertUrl.value;
       if (window.isSecureContext && navigator.clipboard) {
         navigator.clipboard.writeText(content);
       } else {
@@ -65,6 +66,7 @@ export default {
 
     onMounted(() => {
       fakeMessages.value = fakeMessagesObj;
+      fakeAlertUrl.value = fakeAlertUrlObj;
     });
 
     return { fakeMessages, fakeAlertUrl, copyToClipboard, copiedUrl };
@@ -113,7 +115,7 @@ export default {
               class="shadow border block rounded w-full mr-3 py-2 px-3 text-gray-700 leading-normal focus:outline-none focus:shadow-outline"
               id="fakeAlertUrl"
               type="text"
-              v-model="fakeAlertUrl"
+              :value="fakeAlertUrl"
               readonly
             />
             <button
