@@ -19,8 +19,8 @@ export default {
             <p>Use this web app to receive BCH superchats in your stream.</p>
             <p>Here is an <RouterLink to="/vulkan0n" class="text-green-500 underline">Example</RouterLink>. </p>
             <p>
-              <RouterLink to="/user/signup" class="text-green-500 underline">Sign up</RouterLink> to create your superbchat and start receiving donations,
-              or <RouterLink to="/user/login" class="text-green-500 underline">Login</RouterLink> to access your received messages and get your alert URL
+              <RouterLink to="/user/signup" class="text-green-500 underline">Sign up</RouterLink> to create your Superbchat and start receiving donations,
+              or <RouterLink to="/user/login" class="text-green-500 underline">Log in</RouterLink> to access your received messages and get your alert URL
               to set up in OBS.
             </p>
             <p>
@@ -46,7 +46,7 @@ export default {
           >
         </div>
         <div>
-          <RouterLink to="/user/signup" class="text-green-500 underline">Create a superbchat page</RouterLink>
+          <RouterLink to="/privacy-policy" class="text-green-500 underline">Privacy Policy</RouterLink>
         </div>
       </div>
     </div>

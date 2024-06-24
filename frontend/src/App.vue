@@ -5,13 +5,15 @@ import { ref } from "vue";
 export default {
   setup() {
     const route = useRoute();
-    const routesWithHeader = ["home", "superbchat", "404"];
+    const routesWithHeader = ["home", "superbchat", "privacy-policy", "404"];
+    const routesNotCentered = ["dashboard", "privacy-policy"];
     let show = ref(false);
     return {
       RouterLink,
       RouterView,
       route,
       routesWithHeader,
+      routesNotCentered,
       show,
     };
   },
@@ -74,7 +76,7 @@ export default {
         </div>
       </div>
     </header>
-    <div :class="route.name != 'dashboard' ? 'mt-2 flex-1 flex items-center justify-center flex-col' : ''">
+    <div :class="!routesNotCentered.includes(route.name) ? 'mt-2 flex-1 flex items-center justify-center flex-col' : ''">
       <RouterView />
     </div>
   </div>
