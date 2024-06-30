@@ -131,13 +131,13 @@ export default {
               >
                 Message:
               </label>
-              <input
-                class="shadow appearance-none border rounded w-80 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              <textarea
+                class="shadow appearance-none border rounded w-80 py-2 px-3 h-24 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 id="donationMessage"
                 type="text"
                 placeholder=""
                 v-model="donationMessage"
-              />
+                ></textarea>
             </div>
             <div class="mb-6">
               <label class="block text-gray-500 font-bold">
