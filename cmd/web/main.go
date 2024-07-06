@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"flag"
 	"html/template"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"github.com/go-playground/form/v4"
 	_ "github.com/lib/pq"
 	"github.com/vulkan0n/superbchat/internal/models"
+	"github.com/vulkan0n/superbchat/ui"
 )
 
 type application struct {
@@ -70,8 +72,16 @@ func main() {
 	srv := &http.Server{
 		Addr:     ":" + port,
 		ErrorLog: errorLog,
-		Handler:  app.routes(),
+		//		Handler:  app.routes(),
 	}
+
+	stripped, err := fs.Sub(ui.Frontend, "frontend/dist")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	frontendFS := http.FileServer(http.FS(stripped))
+	http.Handle("/", frontendFS)
 
 	app.infoLog.Printf("App running in port: %s", port)
 	err = srv.ListenAndServe()
