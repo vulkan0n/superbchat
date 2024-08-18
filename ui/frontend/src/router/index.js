@@ -1,5 +1,8 @@
 import { createRouter, createWebHistory } from "vue-router";
 import HomeView from "../views/HomeView.vue";
+import LoginView from "../views/LoginView.vue";
+import DashboardView from "../views/DashboardView.vue";
+import SuperbchatView from "../views/SuperbchatView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -12,7 +15,7 @@ const router = createRouter({
     {
       path: "/user/login",
       name: "login",
-      component: () => import("../views/LoginView.vue"),
+      component: LoginView,
     },
     {
       path: "/user/signup",
@@ -22,7 +25,7 @@ const router = createRouter({
     {
       path: "/dashboard",
       name: "dashboard",
-      component: () => import("../views/DashboardView.vue"),
+      component: DashboardView,
     },
     {
       path: "/privacy-policy",
@@ -32,7 +35,7 @@ const router = createRouter({
     {
       path: "/:user",
       name: "superbchat",
-      component: () => import("../views/SuperbchatView.vue"),
+      component: SuperbchatView,
     },
     {
       path: "/404",

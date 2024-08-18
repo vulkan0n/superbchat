@@ -2,9 +2,9 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"flag"
 	"html/template"
-	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +13,8 @@ import (
 	"github.com/alexedwards/scs/postgresstore"
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/lib/pq"
 	"github.com/vulkan0n/superbchat/internal/models"
 	"github.com/vulkan0n/superbchat/ui"
@@ -64,30 +66,20 @@ func main() {
 		sessionManager: sessionManager,
 	}
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8900"
-	}
+	e := echo.New()
 
-	srv := &http.Server{
-		Addr:     ":" + port,
-		ErrorLog: errorLog,
-		//		Handler:  app.routes(),
-	}
+	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		Root:       "frontend/dist", // This is the path to your SPA build folder, the folder that is created from running "npm build"
+		Index:      "index.html",    // This is the default html page for your SPA
+		Browse:     false,
+		HTML5:      true,
+		Filesystem: http.FS(ui.Frontend),
+	}))
 
-	stripped, err := fs.Sub(ui.Frontend, "frontend/dist")
-	if err != nil {
-		log.Fatalln(err)
+	if err := e.Start(":8900"); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		e.Logger.Fatal(err)
 	}
-
-	frontendFS := http.FileServer(http.FS(stripped))
-	http.Handle("/", frontendFS)
-
-	app.infoLog.Printf("App running in port: %s", port)
-	err = srv.ListenAndServe()
-	if err != nil {
-		errorLog.Fatal(err)
-	}
+	app.infoLog.Printf("App running in port: 8900")
 }
 
 func openDB(dsn string) (*sql.DB, error) {
