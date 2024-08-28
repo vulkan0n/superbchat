@@ -1,6 +1,7 @@
 <script>
 import { ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
+import axios from "axios";
 
 const fakeCredentials = { user: "vulkan0n", password: "test" };
 
@@ -17,6 +18,7 @@ export default {
     const router = useRouter();
 
     function verifyAndLogin() {
+      postLogin();
       emptyUserError.value = username.value == "";
       emptyPasswordError.value = password.value == "";
 
@@ -30,9 +32,23 @@ export default {
         ) {
           credentialsError.value = true;
         } else {
-          router.push('/dashboard')
+          router.push("/dashboard");
         }
       }
+    }
+
+    function postLogin() {
+      axios
+        .post("/test", {
+          user: username.value,
+          pass: password.value
+        })
+        .then((response) => {
+          console.log(response)
+        })
+        .catch((error) => {
+          console.log(`The API returned an error: ${error}`);
+        });
     }
 
     return {

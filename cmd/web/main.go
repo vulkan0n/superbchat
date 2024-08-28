@@ -14,15 +14,14 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/lib/pq"
 	"github.com/vulkan0n/superbchat/internal/models"
-	"github.com/vulkan0n/superbchat/ui"
 )
 
 type application struct {
-	errorLog       *log.Logger
+	echo           *echo.Echo
 	infoLog        *log.Logger
+	errorLog       *log.Logger
 	accounts       *models.AccountModel
 	superchats     *models.SuperchatModel
 	templateCache  map[string]*template.Template
@@ -56,7 +55,10 @@ func main() {
 	sessionManager.Store = postgresstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
 
+	e := echo.New()
+
 	app := &application{
+		echo:           e,
 		errorLog:       errorLog,
 		infoLog:        infoLog,
 		superchats:     &models.SuperchatModel{DB: db},
@@ -65,21 +67,11 @@ func main() {
 		formDecoder:    &formDecoder,
 		sessionManager: sessionManager,
 	}
+	app.routes()
 
-	e := echo.New()
-
-	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
-		Root:       "frontend/dist", // This is the path to your SPA build folder, the folder that is created from running "npm build"
-		Index:      "index.html",    // This is the default html page for your SPA
-		Browse:     false,
-		HTML5:      true,
-		Filesystem: http.FS(ui.Frontend),
-	}))
-
-	if err := e.Start(":8900"); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		e.Logger.Fatal(err)
+	if err := app.echo.Start(":8900"); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		app.errorLog.Println(err)
 	}
-	app.infoLog.Printf("App running in port: 8900")
 }
 
 func openDB(dsn string) (*sql.DB, error) {
