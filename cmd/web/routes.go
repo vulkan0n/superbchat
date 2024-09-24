@@ -39,6 +39,8 @@ func (app *application) routes() {
 		Format: "time=${time_rfc3339}, method=${method}, uri=${uri}, status=${status}\n",
 	}))
 
+	app.echo.POST("/user-signup", app.postUserSignup)
+
 	app.echo.POST("/test", app.postTest)
 
 	app.echo.Use(middleware.StaticWithConfig(middleware.StaticConfig{

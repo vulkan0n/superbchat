@@ -1,25 +1,19 @@
 package main
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
-	"strings"
-	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/labstack/echo/v4"
-	"github.com/skip2/go-qrcode"
-	"github.com/vulkan0n/superbchat/internal/fullstack"
 	"github.com/vulkan0n/superbchat/internal/models"
 	"github.com/vulkan0n/superbchat/internal/validator"
 )
 
-type PostLoginBody struct {
+type PostCredentialsBody struct {
 	Username string `json:"user"`
 	Password string `json:"pass"`
 }
@@ -33,10 +27,11 @@ func (app *application) postTest(c echo.Context) error {
 		fmt.Println(err)
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Body Request"})
 	}
-	n := PostLoginBody{
+	n := PostCredentialsBody{
 		Username: "default",
 		Password: "default",
 	}
+
 	// equivalent of JSON.parse() in GO
 	// By default Go passes arguments by value, meaning it creates a copy of the value, and a new pointer is created.
 	// json.Unmarshall requires a reference (a pointer) to PostPersonBody and will update it internally.
@@ -49,371 +44,47 @@ func (app *application) postTest(c echo.Context) error {
 	app.infoLog.Println(n)
 	// Update local instance (db...)
 
-	return c.JSON(http.StatusAccepted, n)
+	return c.JSON(http.StatusOK, n)
 }
 
-func (app *application) index(w http.ResponseWriter, r *http.Request) {
-	app.render(w, http.StatusOK, "index.html", app.newTemplateData(r))
-}
-
-type viewForm struct {
-	AlertURL      string
-	SuperbchatURL string
-}
-
-func (app *application) view(w http.ResponseWriter, r *http.Request) {
-	accountId := app.sessionManager.GetInt(r.Context(), "authAccountId")
-
-	superchats, err := app.superchats.GetFromAccount(accountId)
+func (app *application) postUserSignup(c echo.Context) error {
+	r := c.Request()
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		app.serverError(w, err)
-		return
+		fmt.Println(err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Body Request"})
 	}
-	var paidSuperchats []*models.Superchat
-	for _, superchat := range superchats {
-		if superchat.IsPaid {
-			paidSuperchats = append(paidSuperchats, superchat)
-		}
+	n := PostCredentialsBody{
+		Username: "default",
+		Password: "default",
 	}
-	account, err := app.accounts.Get(accountId)
+	err = json.Unmarshal(b, &n)
 	if err != nil {
-		app.serverError(w, err)
-		return
+		fmt.Println(err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
 	}
-	form := viewForm{
-		SuperbchatURL: fmt.Sprintf("/%v", account.Username),
-		AlertURL:      fmt.Sprintf("%v/alert/%v", r.Host, account.Token),
-	}
-
-	data := app.newTemplateData(r)
-	data.Superchats = paidSuperchats
-	data.Form = form
-	app.render(w, http.StatusOK, "view.html", data)
-}
-
-type settingsForm struct {
-	Address             string  `form:"address"`
-	MinDonation         float64 `form:"minDonation"`
-	NameMaxChars        int     `form:"nameMaxChars"`
-	MessageMaxChars     int     `form:"msgMaxChars"`
-	IsDefaultShowAmount bool    `form:"showAmount"`
-	validator.Validator `form:"-"`
-}
-
-func (app *application) settings(w http.ResponseWriter, r *http.Request) {
-	accountId := app.sessionManager.GetInt(r.Context(), "authAccountId")
-	account, err := app.accounts.Get(accountId)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	data := app.newTemplateData(r)
-	data.Form = settingsForm{
-		Address:             account.Address,
-		MinDonation:         account.MinDonation,
-		NameMaxChars:        account.NameMaxChars,
-		MessageMaxChars:     account.MessageMaxChars,
-		IsDefaultShowAmount: account.IsDefaultShowAmount,
-	}
-	app.render(w, http.StatusOK, "settings.html", data)
-}
-
-func (app *application) settingsPost(w http.ResponseWriter, r *http.Request) {
-	accountId := app.sessionManager.GetInt(r.Context(), "authAccountId")
-
-	var form settingsForm
-	err := app.decodePostForm(r, &form)
-	if err != nil {
-		app.clientError(w, http.StatusBadRequest)
-		return
-	}
-
-	form.CheckField(validator.MaxChars(form.NameMaxChars, 100), "nameMaxChars", "Must be less than 100 characters long")
-	form.CheckField(validator.MaxChars(form.MessageMaxChars, 1000), "msgMaxChars", "Must be less than 1000 characters long")
-	form.CheckField(validator.ValidAddress(form.Address, app.infoLog), "address", "Invalid address format")
-
-	if !form.IsValid() {
-		data := app.newTemplateData(r)
-		data.Form = form
-		app.render(w, http.StatusOK, "settings.html", data)
-		return
-	}
-
-	account, err := app.accounts.Get(accountId)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	account.Address = form.Address
-	account.MinDonation = form.MinDonation
-	account.NameMaxChars = form.NameMaxChars
-	account.MessageMaxChars = form.MessageMaxChars
-	account.IsDefaultShowAmount = form.IsDefaultShowAmount
-	err = app.accounts.Update(account)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	app.sessionManager.Put(r.Context(), "flash", "Settings updated successfully")
-	http.Redirect(w, r, "/view", http.StatusSeeOther)
-}
-
-func remove(stringSlice []string, stringToRemove string) []string {
-	for i, v := range stringSlice {
-		if v == stringToRemove {
-			return append(stringSlice[:i], stringSlice[i+1:]...)
-		}
-	}
-	return stringSlice
-}
-
-type alertForm struct {
-	Name     string
-	Message  string
-	Amount   float64
-	IsHidden bool
-}
-
-func (app *application) alert(w http.ResponseWriter, r *http.Request) {
-	accountToken := chi.URLParam(r, "token")
-	if !app.accounts.Exist(accountToken) {
-		app.notFound(w, r)
-		return
-	}
-	data := app.newTemplateData(r)
-	data.CustomStyle = "style-alert.css"
-	data.Autorefresh = true
-
-	superchat, err := app.superchats.GetOldestNotAlerted(accountToken)
-	if err != nil {
-		if errors.Is(err, models.ErrNoRecord) {
-			data.CustomStyle = "style-noalert.css"
-		} else {
-			app.serverError(w, err)
-			return
-		}
-	} else {
-		app.superchats.SetAsAlerted(superchat.Id)
-		form := alertForm{
-			Name:     superchat.Name,
-			Message:  superchat.Message,
-			Amount:   superchat.Amount,
-			IsHidden: superchat.IsHidden,
-		}
-		data.Form = form
-	}
-	app.render(w, http.StatusOK, "alert.html", data)
-}
-
-type payPostForm struct {
-	AccountId  int     `form:"accountId"`
-	Name       string  `form:"name"`
-	Amount     float64 `form:"amount"`
-	Message    string  `form:"message"`
-	ShowAmount bool    `form:"showAmount"`
-}
-
-type payForm struct {
-	Amount    float64
-	Name      string
-	Message   string
-	Address   string
-	AddressQR string
-	CheckURL  string
-}
-
-func (app *application) payPost(w http.ResponseWriter, r *http.Request) {
-	var postForm payPostForm
-	err := app.decodePostForm(r, &postForm)
-	if err != nil {
-		app.clientError(w, http.StatusBadRequest)
-		return
-	}
-	account, err := app.accounts.Get(postForm.AccountId)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	if postForm.Amount == 0 {
-		postForm.Amount = account.MinDonation
-	}
-	if postForm.Name == "" {
-		postForm.Name = "Anonymous"
-	}
-
-	superchatId, err := app.superchats.Insert("", postForm.Name, postForm.Message, postForm.Amount,
-		!postForm.ShowAmount, postForm.AccountId)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	qrAddress := account.Address
-	if !strings.Contains(qrAddress, "bitcoincash:") {
-		qrAddress = "bitcoincash:" + account.Address
-	}
-
-	tmp, _ := qrcode.Encode(fmt.Sprintf("%s?amount=%f", qrAddress, postForm.Amount), qrcode.Low, 320)
-
-	form := payForm{
-		Amount:    postForm.Amount,
-		Name:      postForm.Name,
-		Message:   postForm.Message,
-		Address:   account.Address,
-		AddressQR: base64.StdEncoding.EncodeToString(tmp),
-		CheckURL:  fmt.Sprintf("%v/%v", superchatId, postForm.AccountId),
-	}
-	data := app.newTemplateData(r)
-	data.Form = form
-
-	app.render(w, http.StatusOK, "pay.html", data)
-}
-
-type checkForm struct {
-	Receipt     string
-	Autorefresh bool
-}
-
-func (app *application) check(w http.ResponseWriter, r *http.Request) {
-	superchatId, _ := strconv.Atoi(chi.URLParam(r, "superchatId"))
-	accountId, _ := strconv.Atoi(chi.URLParam(r, "accountId"))
-
-	currentSuperchat, err := app.superchats.Get(superchatId)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	if currentSuperchat.IsPaid {
-		form := checkForm{
-			Autorefresh: false,
-			Receipt:     fmt.Sprintf("%f BCH Received! Superchat sent", currentSuperchat.Amount),
-		}
-		data := app.newTemplateData(r)
-		data.CustomStyle = "style-check.css"
-		data.Autorefresh = form.Autorefresh
-		data.Form = form
-		app.render(w, http.StatusOK, "check.html", data)
-		return
-	}
-
-	accountSuperchats, err := app.superchats.GetFromAccount(accountId)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	account, err := app.accounts.Get(accountId)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	form := checkForm{
-		Receipt:     "Waiting for payment...",
-		Autorefresh: true,
-	}
-	txsWallet, err := fullstack.GetTXs(account.Address, app.infoLog)
-	if err != nil {
-		if errors.Is(err, fullstack.ErrTooManyRequests) {
-			time.Sleep(3 * time.Second)
-			data := app.newTemplateData(r)
-			data.CustomStyle = "style-check.css"
-			data.Autorefresh = form.Autorefresh
-			data.Form = form
-			app.render(w, http.StatusOK, "check.html", data)
-			return
-		}
-		app.serverError(w, err)
-		return
-	}
-
-	for _, superchat := range accountSuperchats {
-		if superchat.IsPaid {
-			txsWallet = remove(txsWallet, superchat.TxId)
-		}
-	}
-
-	txsDetailsResp, err := fullstack.GetTxsDetailsResponse(txsWallet, app.infoLog)
-	if err != nil {
-		if errors.Is(err, fullstack.ErrTooManyRequests) {
-			time.Sleep(3 * time.Second)
-			data := app.newTemplateData(r)
-			data.CustomStyle = "style-check.css"
-			data.Autorefresh = form.Autorefresh
-			data.Form = form
-			app.render(w, http.StatusOK, "check.html", data)
-			return
-		}
-		app.serverError(w, err)
-		return
-	}
-	for _, tx := range txsDetailsResp.Transactions {
-		for _, vout := range tx.Details.Vout {
-			if vout.Value == currentSuperchat.Amount {
-				app.superchats.SetAsPaid(tx.TxId, currentSuperchat.Id)
-				form.Autorefresh = false
-				form.Receipt = fmt.Sprintf("%f BCH Received! Superchat sent", currentSuperchat.Amount)
-			}
-		}
-	}
-
-	data := app.newTemplateData(r)
-	data.CustomStyle = "style-check.css"
-	data.Autorefresh = form.Autorefresh
-	data.Form = form
-	app.render(w, http.StatusOK, "check.html", data)
-}
-
-type userSignupForm struct {
-	User                string `form:"user"`
-	Password            string `form:"password"`
-	RepeatedPassword    string `form:"repeated-password"`
-	Address             string `form:"address"`
-	validator.Validator `form:"-"`
-}
-
-func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
-	data := app.newTemplateData(r)
-	data.Form = userSignupForm{}
-	app.render(w, http.StatusOK, "signup.html", data)
-}
-
-func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
-	var form userSignupForm
-	err := app.decodePostForm(r, &form)
-	if err != nil {
-		app.clientError(w, http.StatusBadRequest)
-		return
-	}
-
-	form.CheckField(validator.NotBlank(form.User), "user", "This field cannot be blank")
-	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
-	form.CheckField(validator.MinChars(form.Password, 8), "password", "Must be at least 8 characters long")
-	form.CheckField(validator.EqualValue(form.Password, form.RepeatedPassword), "repeatedPassword", "Password doesn't match")
-	form.CheckField(validator.ValidAddress(form.Address, app.infoLog), "address", "Invalid address format")
-
-	if !form.IsValid() {
-		data := app.newTemplateData(r)
-		data.Form = form
-		app.render(w, http.StatusOK, "signup.html", data)
-		return
-	}
-	err = app.accounts.Insert(form.User, form.Password, form.Address)
+	err = app.accounts.Insert(n.Username, n.Password)
 	if err != nil {
 		if errors.Is(err, models.ErrDuplicateUser) {
-			form.AddFieldError("user", "Username already in use")
-			data := app.newTemplateData(r)
-			data.Form = form
-			app.render(w, http.StatusOK, "signup.html", data)
+			app.errorLog.Println(err)
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Username already in use"})
 		} else {
-			app.serverError(w, err)
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 		}
-		return
 	}
-	app.sessionManager.Put(r.Context(), "flash", "Your signup was successful. Please log in.")
+	return c.String(http.StatusOK, "User added")
+}
 
-	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+func (app *application) getSettings(c echo.Context) error {
+	return c.String(http.StatusOK, "Default")
+}
+
+func (app *application) postSettings(c echo.Context) error {
+	return c.String(http.StatusOK, "Default")
+}
+
+func (app *application) postPay(c echo.Context) error {
+	return c.String(http.StatusOK, "Default")
 }
 
 type userLoginForm struct {

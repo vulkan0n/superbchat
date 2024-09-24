@@ -1,8 +1,7 @@
 <script>
 import { ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
-
-const fakeCredentials = { user: "vulkan0n", password: "test" };
+import axios from "axios";
 
 export default {
   setup() {
@@ -15,6 +14,7 @@ export default {
     const shortPasswordError = ref(false);
     const differentPasswordError = ref(false);
     const usernameTakenError = ref(false);
+    const isLoading = ref(false);
 
     const errorClass = ref("border-red-500");
 
@@ -25,7 +25,6 @@ export default {
       emptyPasswordError.value = password.value == "";
       shortPasswordError.value = password.value.length < 8;
       differentPasswordError.value = password.value != repeatedPassword.value;
-      usernameTakenError.value = usernameIsTaken(username.value);
 
       if (
         !emptyUserError.value &&
@@ -34,12 +33,39 @@ export default {
         !differentPasswordError.value &&
         !usernameTakenError.value
       ) {
-        router.push("/user/login");
+        postUserSignUp();
       }
     }
 
-    function usernameIsTaken(user) {
-      return user == fakeCredentials.user;
+    async function postUserSignUp() {
+      isLoading.value = true;
+
+      try {
+        const response = await axios.post("/user-signup", {
+          user: username.value,
+          pass: password.value,
+        });
+        console.log(response);
+
+        if (response.statusText == "OK") {
+          router.push("/dashboard");
+        } else {
+          console.log("error response");
+          usernameTakenError.value = true;
+          setTimeout(() => {
+            usernameTakenError.value = false;
+          }, 3000);
+        }
+      } catch (err) {
+        console.log("error server");
+        console.log(err);
+        usernameTakenError.value = true;
+        setTimeout(() => {
+          usernameTakenError.value = false;
+        }, 3000);
+      } finally {
+        isLoading.value = false;
+      }
     }
 
     return {
@@ -54,6 +80,7 @@ export default {
       usernameTakenError,
       errorClass,
       verifyAndSignUp,
+      isLoading,
     };
   },
 };
@@ -122,15 +149,16 @@ export default {
               </label>
               <input
                 class="shadow appearance-none border rounded w-80 py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
-                :class="
-                  differentPasswordError ? errorClass : ''
-                "
+                :class="differentPasswordError ? errorClass : ''"
                 id="repeatedPassword"
                 type="password"
                 placeholder="•••••••••"
                 v-model="repeatedPassword"
               />
-              <p v-if="differentPasswordError" class="text-red-500 text-xs italic">
+              <p
+                v-if="differentPasswordError"
+                class="text-red-500 text-xs italic"
+              >
                 Password does not match.
               </p>
             </div>
@@ -141,7 +169,7 @@ export default {
                 type="button"
                 @click="verifyAndSignUp"
               >
-                Create
+                {{ isLoading ? "Loading..." : "Create" }}
               </button>
             </div>
           </div>

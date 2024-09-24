@@ -27,11 +27,11 @@ type AccountModel struct {
 	DB *sql.DB
 }
 
-func (m *AccountModel) Insert(username, password, address string) error {
+func (m *AccountModel) Insert(username, password string) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	stmt := `INSERT INTO account (username, password, address, name_max_char, message_max_char, min_donation, show_amount, created)
-  VALUES($1, $2, $3, 25, 300, 0.001, true, CURRENT_TIMESTAMP)`
-	_, err = m.DB.Exec(stmt, username, string(hashedPassword), address)
+  VALUES($1, $2, '', 25, 300, 0.001, true, CURRENT_TIMESTAMP)`
+	_, err = m.DB.Exec(stmt, username, string(hashedPassword))
 	if err != nil {
 		var posgreSQLError *pq.Error
 		if errors.As(err, &posgreSQLError) {
