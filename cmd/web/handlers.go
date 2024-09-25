@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/go-chi/chi"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/vulkan0n/superbchat/internal/models"
-	"github.com/vulkan0n/superbchat/internal/validator"
 )
 
 type PostCredentialsBody struct {
@@ -75,6 +77,63 @@ func (app *application) postUserSignup(c echo.Context) error {
 	return c.String(http.StatusOK, "User added")
 }
 
+type JwtClaims struct {
+	UserId int `json:"userId"`
+	jwt.RegisteredClaims
+}
+
+var jwtSecret = []byte("BCH_is_awsome") // Secret key to sign tokens
+
+func (app *application) postUserLogin(c echo.Context) error {
+	r := c.Request()
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println(err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Body Request"})
+	}
+	credential := PostCredentialsBody{
+		Username: "default",
+		Password: "default",
+	}
+	err = json.Unmarshal(b, &credential)
+	if err != nil {
+		fmt.Println(err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
+	}
+
+	id, err := app.accounts.Authenticate(credential.Username, credential.Password)
+
+	if err != nil {
+		if errors.Is(err, models.ErrInvalidCredentials) {
+
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid username or password"})
+		} else {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		}
+	}
+	expirationTime := time.Now().Add(12 * time.Hour)
+	claims := &JwtClaims{
+		UserId: id,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(jwtSecret)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Token generation failed",
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"token":  tokenString,
+		"userId": strconv.Itoa(id),
+	})
+
+}
+
 func (app *application) getSettings(c echo.Context) error {
 	return c.String(http.StatusOK, "Default")
 }
@@ -85,58 +144,6 @@ func (app *application) postSettings(c echo.Context) error {
 
 func (app *application) postPay(c echo.Context) error {
 	return c.String(http.StatusOK, "Default")
-}
-
-type userLoginForm struct {
-	User                string `form:"user"`
-	Password            string `form:"password"`
-	validator.Validator `form:"-"`
-}
-
-func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
-	data := app.newTemplateData(r)
-	data.Form = userLoginForm{}
-	app.render(w, http.StatusOK, "login.html", data)
-}
-
-func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
-	var form userLoginForm
-	err := app.decodePostForm(r, &form)
-	if err != nil {
-		app.clientError(w, http.StatusBadRequest)
-		return
-	}
-
-	form.CheckField(validator.NotBlank(form.User), "user", "This field cannot be blank")
-	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
-
-	if !form.IsValid() {
-		data := app.newTemplateData(r)
-		data.Form = form
-		app.render(w, http.StatusOK, "login.html", data)
-		return
-	}
-
-	id, err := app.accounts.Authenticate(form.User, form.Password)
-	if err != nil {
-		if errors.Is(err, models.ErrInvalidCredentials) {
-			form.AddNonFieldError("Username or password incorrect")
-			data := app.newTemplateData(r)
-			data.Form = form
-			app.render(w, http.StatusOK, "login.html", data)
-		} else {
-			app.serverError(w, err)
-		}
-		return
-	}
-	err = app.sessionManager.RenewToken(r.Context())
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	app.sessionManager.Put(r.Context(), "authAccountId", id)
-
-	http.Redirect(w, r, "/view", http.StatusSeeOther)
 }
 
 func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {

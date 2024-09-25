@@ -22,6 +22,7 @@ const router = createRouter({
       path: "/dashboard",
       name: "dashboard",
       component: () => import("../views/DashboardView.vue"),
+      meta: { requiresAuth: true },
     },
     {
       path: "/privacy-policy",
@@ -39,6 +40,19 @@ const router = createRouter({
       component: () => import("../views/404View.vue"),
     },
   ],
+});
+
+router.beforeEach((to, from, next) => {
+  const isAuthenticated = !!localStorage.getItem("token");
+  if (to.matched.some((record) => record.meta.requiresAuth)) {
+    if (!isAuthenticated) {
+      next({ name: "login" });
+    } else {
+      next();
+    }
+  } else {
+    next();
+  }
 });
 
 export default router;

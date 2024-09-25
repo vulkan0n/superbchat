@@ -45,10 +45,25 @@ export default {
           user: username.value,
           pass: password.value,
         });
-        console.log(response);
 
         if (response.statusText == "OK") {
-          router.push("/dashboard");
+          isLoading.value = true;
+          try {
+            const loginResponse = await axios.post("/user-login", {
+              user: username.value,
+              pass: password.value,
+            });
+            if (loginResponse.statusText == "OK") {
+              const token = loginResponse.data.token;
+              const userId = loginResponse.data.userId;
+              localStorage.setItem("token", token);
+              localStorage.setItem("userId", userId);
+            }
+          } catch (err) {
+            console.log(err);
+          } finally {
+            router.push("/dashboard");
+          }
         } else {
           console.log("error response");
           usernameTakenError.value = true;

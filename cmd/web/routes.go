@@ -7,7 +7,6 @@ import (
 	"github.com/vulkan0n/superbchat/ui"
 )
 
-// func (app *application) routes() http.Handler {
 func (app *application) routes() {
 	// r := chi.NewRouter()
 	// r.NotFound(app.notFound)
@@ -40,6 +39,7 @@ func (app *application) routes() {
 	}))
 
 	app.echo.POST("/user-signup", app.postUserSignup)
+	app.echo.POST("/user-login", app.postUserLogin)
 
 	app.echo.POST("/test", app.postTest)
 
