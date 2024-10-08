@@ -18,37 +18,37 @@ export default {
     const router = useRouter();
 
     function verifyAndLogin() {
-      postLogin();
       emptyUserError.value = username.value == "";
       emptyPasswordError.value = password.value == "";
 
       if (!emptyUserError.value && !emptyPasswordError.value) {
         emptyUserError.value = false;
         emptyPasswordError.value = false;
-
-        if (
-          username.value != fakeCredentials.user ||
-          password.value != fakeCredentials.password
-        ) {
-          credentialsError.value = true;
-        } else {
-          router.push("/dashboard");
-        }
+        postLogin();
       }
     }
 
-    function postLogin() {
-      axios
-        .post("/test", {
+    async function postLogin() {
+      try {
+        const loginResponse = await axios.post("/user-login", {
           user: username.value,
-          pass: password.value
-        })
-        .then((response) => {
-          console.log(response)
-        })
-        .catch((error) => {
-          console.log(`The API returned an error: ${error}`);
+          pass: password.value,
         });
+        if (loginResponse.statusText == "OK") {
+          const token = loginResponse.data.token;
+          const userId = loginResponse.data.userId;
+          localStorage.setItem("token", token);
+          localStorage.setItem("userId", userId);
+          router.push("/dashboard");
+        }
+      } catch (err) {
+        console.log(err);
+        credentialsError.value = true;
+      } finally {
+        setTimeout(() => {
+          credentialsError.value = false;
+        }, 3000);
+      }
     }
 
     return {
@@ -108,6 +108,7 @@ export default {
                 type="password"
                 placeholder="•••••••••"
                 v-model="password"
+                @keyup.enter="verifyAndLogin"
               />
               <p v-if="emptyPasswordError" class="text-red-500 text-xs italic">
                 Please choose a password.

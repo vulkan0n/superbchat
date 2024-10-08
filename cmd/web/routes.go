@@ -41,8 +41,6 @@ func (app *application) routes() {
 	app.echo.POST("/user-signup", app.postUserSignup)
 	app.echo.POST("/user-login", app.postUserLogin)
 
-	app.echo.POST("/test", app.postTest)
-
 	app.echo.Use(middleware.StaticWithConfig(middleware.StaticConfig{
 		Root:       "frontend/dist",
 		Index:      "index.html", // This is the default html page

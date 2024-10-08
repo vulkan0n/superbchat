@@ -20,35 +20,6 @@ type PostCredentialsBody struct {
 	Password string `json:"pass"`
 }
 
-func (app *application) postTest(c echo.Context) error {
-	// Get the request
-	r := c.Request()
-	// Read the body
-	b, err := io.ReadAll(r.Body)
-	if err != nil {
-		fmt.Println(err)
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Body Request"})
-	}
-	n := PostCredentialsBody{
-		Username: "default",
-		Password: "default",
-	}
-
-	// equivalent of JSON.parse() in GO
-	// By default Go passes arguments by value, meaning it creates a copy of the value, and a new pointer is created.
-	// json.Unmarshall requires a reference (a pointer) to PostPersonBody and will update it internally.
-	err = json.Unmarshal(b, &n)
-	if err != nil {
-		fmt.Println(err)
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
-	}
-	// Debug purpose
-	app.infoLog.Println(n)
-	// Update local instance (db...)
-
-	return c.JSON(http.StatusOK, n)
-}
-
 func (app *application) postUserSignup(c echo.Context) error {
 	r := c.Request()
 	b, err := io.ReadAll(r.Body)
