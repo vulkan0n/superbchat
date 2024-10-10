@@ -102,7 +102,46 @@ func (app *application) postUserLogin(c echo.Context) error {
 		"token":  tokenString,
 		"userId": strconv.Itoa(id),
 	})
+}
 
+type PostTokenBody struct {
+	Token string `json:"token"`
+}
+
+func (app *application) postVerifyToken(c echo.Context) error {
+	r := c.Request()
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println(err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Body Request"})
+	}
+	tokenBody := PostTokenBody{
+		Token: "default",
+	}
+	err = json.Unmarshal(b, &tokenBody)
+	if err != nil {
+		fmt.Println(err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
+	}
+
+	token, err := jwt.ParseWithClaims(tokenBody.Token, &JwtClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return jwtSecret, nil
+	})
+
+	if err != nil {
+		app.infoLog.Println(err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Error parsing token:"})
+	}
+
+	// Validate token and extract claims
+	if claims, ok := token.Claims.(*JwtClaims); ok && token.Valid {
+		return c.String(http.StatusOK, fmt.Sprintf("Token is valid! User: %d, Expires at: %v\n", claims.UserId, time.Unix(claims.ExpiresAt.Unix(), 0)))
+	} else {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid token"})
+	}
 }
 
 func (app *application) getSettings(c echo.Context) error {

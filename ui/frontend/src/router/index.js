@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import axios from "axios";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -42,16 +43,26 @@ const router = createRouter({
   ],
 });
 
-router.beforeEach((to, from, next) => {
-  const isAuthenticated = !!localStorage.getItem("token");
+router.beforeEach(async (to, from, next) => {
   if (to.matched.some((record) => record.meta.requiresAuth)) {
-    if (!isAuthenticated) {
-      next({ name: "login" });
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const response = await axios.post("/verify-tkn", { token });
+        if (response.statusText == "OK") {
+          next(); 
+        } else {
+          next("/user/login"); 
+        }
+      } catch (error) {
+        console.error("Error verificando el token:", error);
+        next("/user/login"); 
+      }
     } else {
-      next();
+      next("/user/login"); 
     }
   } else {
-    next();
+    next(); 
   }
 });
 

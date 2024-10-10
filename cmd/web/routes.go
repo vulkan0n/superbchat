@@ -40,6 +40,7 @@ func (app *application) routes() {
 
 	app.echo.POST("/user-signup", app.postUserSignup)
 	app.echo.POST("/user-login", app.postUserLogin)
+	app.echo.POST("/verify-tkn", app.postVerifyToken)
 
 	app.echo.Use(middleware.StaticWithConfig(middleware.StaticConfig{
 		Root:       "frontend/dist",
