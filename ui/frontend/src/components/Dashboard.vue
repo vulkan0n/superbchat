@@ -9,7 +9,7 @@ const fakeMessagesObj = [
     sender: "Vulkan0n",
     amount: 0.0001,
     created: "2022-10-31T09:00:00.594Z",
-    message: "Cool! Let´s go BCH!",
+    message: localStorage.getItem("userId"),
   },
   {
     sender: "Anonymous",
@@ -26,15 +26,16 @@ const fakeMessagesObj = [
     isCashToken: true,
     tknSymbol: "VKN",
     tknAmount: 10,
-    tknLogo: "https://gist.githubusercontent.com/vulkan0n/74922802a5d3a8861765e882c3a2db1a/raw/logo.png",
+    tknLogo:
+      "https://gist.githubusercontent.com/vulkan0n/74922802a5d3a8861765e882c3a2db1a/raw/logo.png",
   },
 ];
 
 export default {
   components: { Message },
   setup() {
-    const fakeMessages = ref('');
-    const fakeAlertUrl = ref('');
+    const fakeMessages = ref("");
+    const fakeAlertUrl = ref("");
     const copiedUrl = ref(false);
 
     const unsecuredCopyToClipboard = (text) => {

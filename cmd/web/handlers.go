@@ -124,7 +124,18 @@ func (app *application) postVerifyToken(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
 	}
 
-	token, err := jwt.ParseWithClaims(tokenBody.Token, &JwtClaims{}, func(token *jwt.Token) (interface{}, error) {
+	userId, err := validateToken(tokenBody.Token)
+
+	// Validate token and extract claims
+	if userId >= 0 {
+		return c.JSON(http.StatusOK, map[string]int{"userId": userId})
+	} else {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid token"})
+	}
+}
+
+func validateToken(tokenStr string) (int, error) {
+	token, err := jwt.ParseWithClaims(tokenStr, &JwtClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
@@ -132,19 +143,37 @@ func (app *application) postVerifyToken(c echo.Context) error {
 	})
 
 	if err != nil {
-		app.infoLog.Println(err)
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Error parsing token:"})
+		return -1, err
 	}
 
 	// Validate token and extract claims
 	if claims, ok := token.Claims.(*JwtClaims); ok && token.Valid {
-		return c.String(http.StatusOK, fmt.Sprintf("Token is valid! User: %d, Expires at: %v\n", claims.UserId, time.Unix(claims.ExpiresAt.Unix(), 0)))
+		return claims.UserId, nil
 	} else {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid token"})
+		return -1, nil
 	}
 }
 
+type UserIdBody struct {
+	UserId int `json:"userId"`
+}
+
 func (app *application) getSettings(c echo.Context) error {
+	r := c.Request()
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println(err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Body Request"})
+	}
+	credential := UserIdBody{
+		UserId: 0,
+	}
+	err = json.Unmarshal(b, &credential)
+	if err != nil {
+		fmt.Println(err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
+	}
+
 	return c.String(http.StatusOK, "Default")
 }
 

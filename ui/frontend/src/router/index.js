@@ -50,6 +50,8 @@ router.beforeEach(async (to, from, next) => {
       try {
         const response = await axios.post("/verify-tkn", { token });
         if (response.statusText == "OK") {
+          const userId = response.data.userId;
+          localStorage.setItem("userId", userId);
           next(); 
         } else {
           next("/user/login"); 
