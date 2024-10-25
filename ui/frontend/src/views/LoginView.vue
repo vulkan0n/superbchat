@@ -3,8 +3,6 @@ import { ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import axios from "axios";
 
-const fakeCredentials = { user: "vulkan0n", password: "test" };
-
 export default {
   setup() {
     const username = ref("");

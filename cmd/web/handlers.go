@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-chi/chi"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/vulkan0n/superbchat/internal/models"
@@ -126,7 +125,6 @@ func (app *application) postVerifyToken(c echo.Context) error {
 
 	userId, err := validateToken(tokenBody.Token)
 
-	// Validate token and extract claims
 	if userId >= 0 {
 		return c.JSON(http.StatusOK, map[string]int{"userId": userId})
 	} else {
@@ -195,37 +193,4 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 	app.sessionManager.Put(r.Context(), "flash", "You've been logged out successfully")
 
 	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
-}
-
-type superbchatForm struct {
-	Username     string
-	AccountId    int
-	NameMaxChars int
-	MsgMaxChars  int
-	MinAmnt      float64
-	Checked      bool
-}
-
-func (app *application) superbchat(w http.ResponseWriter, r *http.Request) {
-	username := chi.URLParam(r, "user")
-	account, err := app.accounts.GetByUsername(username)
-	if err != nil {
-		if errors.Is(err, models.ErrNoRecord) {
-			app.notFound(w, r)
-		} else {
-			app.serverError(w, err)
-		}
-		return
-	}
-
-	data := app.newTemplateData(r)
-	data.Form = superbchatForm{
-		Username:     account.Username,
-		AccountId:    account.Id,
-		NameMaxChars: account.NameMaxChars,
-		MsgMaxChars:  account.MessageMaxChars,
-		MinAmnt:      account.MinDonation,
-		Checked:      account.IsDefaultShowAmount,
-	}
-	app.render(w, http.StatusOK, "superbchat.html", data)
 }

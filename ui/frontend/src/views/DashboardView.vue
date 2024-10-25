@@ -1,8 +1,9 @@
 <script>
 import { ref } from "vue";
-import Dashboard from "../components/Dashboard.vue"
+import Dashboard from "../components/Dashboard.vue";
 import Settings from "@/components/Settings.vue";
 import Wallet from "@/components/Wallet.vue";
+import { useRouter } from "vue-router";
 
 const fakeUser = "vulkan0n";
 
@@ -11,7 +12,12 @@ export default {
   setup() {
     let showNavMenuMobile = ref(false);
     let selectedTab = ref("Dashboard");
-    return { Dashboard, fakeUser, showNavMenuMobile, selectedTab };
+    const router = useRouter();
+    const logout = () => {
+      localStorage.clear();
+      router.push("/");
+    };
+    return { Dashboard, fakeUser, showNavMenuMobile, selectedTab, logout };
   },
 };
 </script>
@@ -78,26 +84,50 @@ export default {
           <li>
             <button
               class="block py-2 px-3 text-white rounded md:p-0 md:text-blue-700 md:dark:text-white"
-              :class="selectedTab == 'Dashboard' ? 'font-bold bg-emerald-700 md:bg-transparent' : 'md:hover:underline md:dark:hover:underline dark:hover:bg-gray-700 '"
+              :class="
+                selectedTab == 'Dashboard'
+                  ? 'font-bold bg-emerald-700 md:bg-transparent'
+                  : 'md:hover:underline md:dark:hover:underline dark:hover:bg-gray-700 '
+              "
               @click="selectedTab = 'Dashboard'"
-              >Dashboard</button
             >
+              Dashboard
+            </button>
           </li>
           <li>
             <button
               class="block py-2 px-3 text-gray-900 rounded md:p-0 md:hover:bg-transparent dark:text-white dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700"
-              :class="selectedTab == 'Settings' ? 'font-bold bg-emerald-700 md:bg-transparent' : 'md:hover:underline md:dark:hover:underline dark:hover:bg-gray-700 '"
+              :class="
+                selectedTab == 'Settings'
+                  ? 'font-bold bg-emerald-700 md:bg-transparent'
+                  : 'md:hover:underline md:dark:hover:underline dark:hover:bg-gray-700 '
+              "
               @click="selectedTab = 'Settings'"
-              >Settings</button
             >
+              Settings
+            </button>
           </li>
           <li>
             <button
-              class="block py-2 px-3 text-gray-900 rounded md:p-0 md:hover:bg-transparent  dark:text-white dark:hover:text-white  dark:border-gray-700"
-              :class="selectedTab == 'Wallet' ? 'font-bold bg-emerald-700 md:bg-transparent' : 'md:hover:underline md:dark:hover:underline dark:hover:bg-gray-700 '"
+              class="block py-2 px-3 text-gray-900 rounded md:p-0 md:hover:bg-transparent dark:text-white dark:hover:text-white dark:border-gray-700"
+              :class="
+                selectedTab == 'Wallet'
+                  ? 'font-bold bg-emerald-700 md:bg-transparent'
+                  : 'md:hover:underline md:dark:hover:underline dark:hover:bg-gray-700 '
+              "
               @click="selectedTab = 'Wallet'"
-              >Wallet</button
             >
+              Wallet
+            </button>
+          </li>
+          <li>
+            <button
+              class="block py-2 px-3 text-gray-900 rounded md:p-0 md:hover:bg-transparent dark:text-white dark:hover:text-white dark:border-gray-700"
+              :class="'md:hover:underline md:dark:hover:underline dark:hover:bg-gray-700 '"
+              @click="logout"
+            >
+              Logout
+            </button>
           </li>
         </ul>
       </div>
