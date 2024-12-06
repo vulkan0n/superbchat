@@ -1,9 +1,8 @@
 <script>
 import { useRouter, useRoute } from "vue-router";
 import { onMounted, ref } from "vue";
-import { BaseWallet, Wallet } from "mainnet-js";
+import axios from "axios";
 
-const fakeUsers = ["vulkan0n", "pepe"];
 const walletAddress = ref();
 const cashAddress = ref();
 const isValidUser = ref(true);
@@ -15,6 +14,7 @@ export default {
     const donationMessage = ref("");
     const showAmount = ref(true);
     const isCashAddrs = ref(false);
+    var userId = 0;
 
     const donationLowError = ref(false);
     const errorClass = ref("border-red-500");
@@ -26,34 +26,53 @@ export default {
     );
 
     const router = useRouter();
+    const route = useRoute();
     const user = useRoute().params.user;
 
-    function verifyAndPay() {
+    async function verifyAndPay() {
       donationLowError.value = donationAmount.value < 0.00000547;
-
       if (!donationLowError.value) {
-        console.log(
-          `Donator: ${donatorName.value} - Message: ${donationMessage.value} 
-          Amount: ${donationAmount.value}`
-        );
+        try {
+          const superbchatResponse = await axios.post("/superbchat", {
+            name: donatorName.value,
+            message: donationMessage.value,
+            amount: donationAmount.value,
+            isHidden: !showAmount.value,
+            recipient: userId,
+            isTkn: isCashAddrs.value,
+          });
+          if (superbchatResponse.statusText == "OK") {
+            console.log("Superchat Sent");
+          }
+        } catch (err) {
+          console.log(err);
+        } finally {
+          setTimeout(() => {
+            router.push(route.fullPath);
+          }, 3000);
+        }
       }
     }
-
     function onQRChange() {
       const currentVal = isCashAddrs.value;
       isCashAddrs.value = !currentVal;
     }
 
     onMounted(async () => {
-      if (!fakeUsers.includes(user)) {
+      try {
+        const userInfoResponse = await axios.get("/user/" + user);
+        if (userInfoResponse.statusText == "OK") {
+          walletAddress.value = userInfoResponse.data.address;
+          cashAddress.value = userInfoResponse.data.tknAddress;
+          showAmount.value = userInfoResponse.data.showAmount;
+          userId = userInfoResponse.data.userId;
+        } else {
+          router.push({ name: "404" });
+          isValidUser.value = false;
+        }
+      } catch (err) {
         router.push({ name: "404" });
         isValidUser.value = false;
-      } else {
-        BaseWallet.StorageProvider = IndexedDBProvider;
-        const wallet = await Wallet.named(`user:${user}`);
-        console.log(wallet);
-        walletAddress.value = wallet.address;
-        cashAddress.value = wallet.tokenaddr;
       }
     });
 
@@ -106,7 +125,7 @@ export default {
                 v-model="donatorName"
               />
             </div>
-            <div class="mb-4">
+            <div v-if="!isCashAddrs" class="mb-4">
               <label
                 class="block text-gray-700 text-sm font-bold mb-2"
                 for="donationAmount"
@@ -137,7 +156,7 @@ export default {
                 type="text"
                 placeholder=""
                 v-model="donationMessage"
-                ></textarea>
+              ></textarea>
             </div>
             <div class="mb-6">
               <label class="block text-gray-500 font-bold">
@@ -170,7 +189,9 @@ export default {
             </ul>
 
             <div class="w-80" v-show="isValidUser">
-              <span class="text-xs">{{!isCashAddrs ? walletAddress : cashAddress}}</span>
+              <span class="text-xs">{{
+                !isCashAddrs ? walletAddress : cashAddress
+              }}</span>
               <qr-code
                 id="qr-bch"
                 :contents="!isCashAddrs ? walletAddress : cashAddress"

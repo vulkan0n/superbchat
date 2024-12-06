@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -15,6 +16,7 @@ type Account struct {
 	Username            string
 	HashedPassword      []byte
 	Address             string
+	TknAddress          string
 	NameMaxChars        int
 	MessageMaxChars     int
 	MinDonation         float64
@@ -86,24 +88,33 @@ func (m *AccountModel) Authenticate(username, password string) (int, error) {
 	return id, nil
 }
 
+const accountColumns = `
+  id, 
+  username,
+  password, 
+  address, 
+  tkn_address, 
+  name_max_char, 
+  message_max_char, 
+  min_donation, 
+  show_amount, 
+  token, 
+  created
+`
+
 func (m *AccountModel) Exist(token string) bool {
-	stmt := `SELECT id, username, password, address, name_max_char, message_max_char, min_donation, show_amount, token, created
-	FROM account WHERE token = $1`
+	stmt := fmt.Sprintf(`SELECT %s FROM account WHERE token = $1`, accountColumns)
 	_, err := GetOneByQuery(m, stmt, token)
 	return (err == nil)
 }
 
 func (m *AccountModel) Get(id int) (*Account, error) {
-	stmt := `SELECT id, username, password, address, name_max_char, message_max_char, min_donation, show_amount, token, created
-	FROM account WHERE id = $1`
-
+	stmt := fmt.Sprintf(`SELECT %s FROM account WHERE id = $1`, accountColumns)
 	return GetOneByQuery(m, stmt, id)
 }
 
 func (m *AccountModel) GetByUsername(username string) (*Account, error) {
-	stmt := `SELECT id, username, password, address, name_max_char, message_max_char, min_donation, show_amount, token, created
-	FROM account WHERE username = $1`
-
+	stmt := fmt.Sprintf(`SELECT %s FROM account WHERE username = $1`, accountColumns)
 	return GetOneByQuery(m, stmt, username)
 }
 
@@ -111,8 +122,18 @@ func GetOneByQuery(m *AccountModel, stmt string, id any) (*Account, error) {
 	row := m.DB.QueryRow(stmt, id)
 
 	s := &Account{}
-	err := row.Scan(&s.Id, &s.Username, &s.HashedPassword, &s.Address, &s.NameMaxChars,
-		&s.MessageMaxChars, &s.MinDonation, &s.IsDefaultShowAmount, &s.Token, &s.Created)
+	err := row.Scan(
+		&s.Id,
+		&s.Username,
+		&s.HashedPassword,
+		&s.Address,
+		&s.TknAddress,
+		&s.NameMaxChars,
+		&s.MessageMaxChars,
+		&s.MinDonation,
+		&s.IsDefaultShowAmount,
+		&s.Token,
+		&s.Created)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNoRecord

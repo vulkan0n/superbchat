@@ -156,6 +156,72 @@ type UserIdBody struct {
 	UserId int `json:"userId"`
 }
 
+type UserInfoResponse struct {
+	UserId     int    `json:"userId"`
+	Username   string `json:"username"`
+	Address    string `json:"address"`
+	TknAddress string `json:"tknAddress"`
+	ShowAmount bool   `json:"showAmount"`
+}
+
+func (app *application) getUserInfo(c echo.Context) error {
+	user := c.Param("user")
+
+	userInfo, err := app.accounts.GetByUsername(user)
+	if err != nil {
+		fmt.Println(err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+
+	response := UserInfoResponse{
+		UserId:     userInfo.Id,
+		Username:   userInfo.Username,
+		Address:    userInfo.Address,
+		TknAddress: userInfo.TknAddress,
+		ShowAmount: userInfo.IsDefaultShowAmount,
+	}
+
+	return c.JSON(http.StatusOK, response)
+}
+
+type postSuperbchatBody struct {
+	Name      string  `json:"name"`
+	Message   string  `json:"message"`
+	Amount    float64 `json:"amount"`
+	IsHidden  bool    `json:"isHidden"`
+	Recipient int     `json:"recipient"`
+	IsTkn     bool    `json:"isTkn"`
+}
+
+func (app *application) postSuperbchat(c echo.Context) error {
+	r := c.Request()
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println(err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Body Request"})
+	}
+	n := postSuperbchatBody{
+		Name:      "default",
+		Message:   "default",
+		Amount:    0,
+		IsHidden:  false,
+		Recipient: 0,
+		IsTkn:     false,
+	}
+	err = json.Unmarshal(b, &n)
+	if err != nil {
+		fmt.Println(err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
+	}
+	_, err = app.superchats.Insert("", n.Name, n.Message, n.Amount, "", 0, n.IsHidden, n.Recipient)
+
+	if err != nil {
+		app.infoLog.Println(err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+	return c.String(http.StatusOK, "Superbchat received")
+}
+
 func (app *application) getSettings(c echo.Context) error {
 	r := c.Request()
 	b, err := io.ReadAll(r.Body)
@@ -177,20 +243,4 @@ func (app *application) getSettings(c echo.Context) error {
 
 func (app *application) postSettings(c echo.Context) error {
 	return c.String(http.StatusOK, "Default")
-}
-
-func (app *application) postPay(c echo.Context) error {
-	return c.String(http.StatusOK, "Default")
-}
-
-func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
-	err := app.sessionManager.RenewToken(r.Context())
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-	app.sessionManager.Remove(r.Context(), "authAccountId")
-	app.sessionManager.Put(r.Context(), "flash", "You've been logged out successfully")
-
-	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 }
