@@ -1,7 +1,7 @@
 <script>
 export default {
   props: {
-    sender: {
+    name: {
       type: String,
       required: true,
     },
@@ -36,7 +36,7 @@ export default {
   },
   setup(props) {
     function onDelete() {
-      console.log("Delete: " + props.sender);
+      console.log("Delete: " + props.name);
     }
 
     const createdDate = new Date(props.created);
@@ -49,7 +49,7 @@ export default {
 
 <template>
   <article
-    :key="sender"
+    :key="name"
     class="py-3 px-6 my-2 max-w-md ring-black text-base ring-2 bg-white border-t border-gray-900 dark:border-gray-900 dark:bg-gray-500 rounded-xl"
   >
     <footer class="flex justify-between items-center mb-2">
@@ -62,7 +62,7 @@ export default {
             class="mr-2 w-6 h-6 rounded-full"
             src="../assets/bitcoin-cash-bch-logo.svg"
             alt="BitcoinCash Logo"
-          />{{ sender }} ({{ amount }} BCH)
+          />{{ name }} ({{ amount }} BCH)
         </p>
         <p
           v-if="isCashToken"
@@ -72,7 +72,7 @@ export default {
             class="mr-2 w-6 h-6 rounded-full"
             :src="tknLogo"
             alt="Token Logo"
-          />{{ sender }} ({{ tknAmount }} {{ tknSymbol }})
+          />{{ name }} ({{ tknAmount }} {{ tknSymbol }})
         </p>
         <p class="text-sm text-gray-600 dark:text-gray-400">
           <time pubdate="" :title="createdDateStr">{{ createdDateStr }}</time>

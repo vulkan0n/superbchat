@@ -1,23 +1,42 @@
 <script>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import axios from "axios";
 import Dashboard from "../components/Dashboard.vue";
 import Settings from "@/components/Settings.vue";
 import Wallet from "@/components/Wallet.vue";
 import { useRouter } from "vue-router";
 
-const fakeUser = "vulkan0n";
+const userName = ref("");
 
 export default {
   components: { Dashboard, Settings, Wallet },
   setup() {
     let showNavMenuMobile = ref(false);
     let selectedTab = ref("Dashboard");
+
     const router = useRouter();
     const logout = () => {
       localStorage.clear();
       router.push("/");
     };
-    return { Dashboard, fakeUser, showNavMenuMobile, selectedTab, logout };
+    onMounted(async () => {
+      try {
+        const userInfoResponse = await axios.get(
+          "/user-id/" + localStorage.getItem("userId")
+        );
+
+        if (userInfoResponse.statusText == "OK") {
+          userName.value = userInfoResponse.data.username;
+        } else {
+          console.log(userInfoResponse);
+          router.push({ name: "404" });
+        }
+      } catch (err) {
+        console.log(err);
+        router.push({ name: "404" });
+      }
+    });
+    return { Dashboard, userName, showNavMenuMobile, selectedTab, logout };
   },
 };
 </script>
@@ -42,7 +61,7 @@ export default {
       </div>
       <div class="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
         <RouterLink
-          :to="'/' + fakeUser"
+          :to="'/' + userName"
           target="_blank"
           class="bg-emerald-500 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
           >Your page</RouterLink

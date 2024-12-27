@@ -10,12 +10,12 @@ const router = createRouter({
       component: () => import("../views/HomeView.vue"),
     },
     {
-      path: "/user/login",
+      path: "/login",
       name: "login",
       component: () => import("../views/LoginView.vue"),
     },
     {
-      path: "/user/signup",
+      path: "/signup",
       name: "signup",
       component: () => import("../views/SignUpView.vue"),
     },
@@ -54,14 +54,14 @@ router.beforeEach(async (to, from, next) => {
           localStorage.setItem("userId", userId);
           next(); 
         } else {
-          next("/user/login"); 
+          next("/login"); 
         }
       } catch (error) {
         console.error("Error verificando el token:", error);
-        next("/user/login"); 
+        next("/login"); 
       }
     } else {
-      next("/user/login"); 
+      next("/login"); 
     }
   } else {
     next(); 

@@ -61,13 +61,13 @@ export default {
               What is Superbchat?
             </router-link>
             <router-link
-              to="/user/signup"
+              to="/signup"
               class="block px-4 py-2 text-sm text-white hover:bg-emerald-400"
             >
               Create a page
             </router-link>
             <router-link
-              to="/user/login"
+              to="/login"
               class="block px-4 py-2 text-sm text-white hover:bg-emerald-400"
             >
               Login

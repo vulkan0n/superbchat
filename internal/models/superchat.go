@@ -8,18 +8,18 @@ import (
 )
 
 type Superchat struct {
-	Id        int
-	TxId      string
-	Name      string
-	Message   string
-	Amount    float64
-	TknSymbol string
-	TknAmount float64
-	IsHidden  bool
-	Recipient int
-	IsPaid    bool
-	IsAlerted bool
-	Created   time.Time
+	Id        int       `json:"id"`
+	TxId      string    `json:"txId"`
+	Name      string    `json:"name"`
+	Message   string    `json:"message"`
+	Amount    float64   `json:"amount"`
+	TknSymbol string    `json:"tknSymbol"`
+	TknAmount float64   `json:"tknAmount"`
+	IsHidden  bool      `json:"isHidden"`
+	Recipient int       `json:"recipient"`
+	IsPaid    bool      `json:"isPaid"`
+	IsAlerted bool      `json:"isAlerted"`
+	Created   time.Time `json:"created"`
 }
 
 type SuperchatModel struct {
@@ -80,13 +80,13 @@ func scanSuperchat(row *sql.Row) (*Superchat, error) {
 }
 
 func (m *SuperchatModel) Get(id int) (*Superchat, error) {
-	stmt := fmt.Sprintf(`SELECT %s FROM superchat WHERE id = $1`, superchatColumns)
+	stmt := fmt.Sprintf(`SELECT id, %s FROM superchat WHERE id = $1`, superchatColumns)
 	row := m.DB.QueryRow(stmt, id)
 	return scanSuperchat(row)
 }
 
 func (m *SuperchatModel) GetFromAccount(accountId int) ([]*Superchat, error) {
-	stmt := fmt.Sprintf(`SELECT %s FROM superchat WHERE account_id = $1 ORDER BY created DESC`, superchatColumns)
+	stmt := fmt.Sprintf(`SELECT id, %s FROM superchat WHERE account_id = $1 ORDER BY created DESC`, superchatColumns)
 	rows, err := m.DB.Query(stmt, accountId)
 	if err != nil {
 		return nil, err
@@ -97,8 +97,20 @@ func (m *SuperchatModel) GetFromAccount(accountId int) ([]*Superchat, error) {
 
 	for rows.Next() {
 		s := &Superchat{}
-		err = rows.Scan(&s.Id, &s.TxId, &s.Name, &s.Message, &s.Amount, &s.TknSymbol, &s.TknAmount, &s.IsHidden,
-			&s.Recipient, &s.IsPaid, &s.IsAlerted, &s.Created)
+		err = rows.Scan(
+			&s.Id,
+			&s.TxId,
+			&s.Name,
+			&s.Message,
+			&s.Amount,
+			&s.TknSymbol,
+			&s.TknAmount,
+			&s.IsHidden,
+			&s.Recipient,
+			&s.IsPaid,
+			&s.IsAlerted,
+			&s.Created,
+		)
 		if err != nil {
 			return nil, err
 		}

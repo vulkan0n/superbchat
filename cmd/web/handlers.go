@@ -152,6 +152,37 @@ func validateToken(tokenStr string) (int, error) {
 	}
 }
 
+func (app *application) postSuperchatsByTkn(c echo.Context) error {
+	r := c.Request()
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println(err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Body Request"})
+	}
+	tokenBody := PostTokenBody{
+		Token: "default",
+	}
+	err = json.Unmarshal(b, &tokenBody)
+	if err != nil {
+		fmt.Println(err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
+	}
+
+	userId, err := validateToken(tokenBody.Token)
+
+	if userId >= 0 {
+		superchats, err := app.superchats.GetFromAccount(userId)
+		if err != nil {
+			fmt.Println(err)
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		}
+
+		return c.JSON(http.StatusOK, superchats)
+	} else {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid token"})
+	}
+}
+
 type UserIdBody struct {
 	UserId int `json:"userId"`
 }
@@ -165,6 +196,28 @@ type UserInfoResponse struct {
 }
 
 func (app *application) getUserInfo(c echo.Context) error {
+	id := c.Param("id")
+
+	if id, err := strconv.Atoi(id); err == nil {
+		userInfo, err := app.accounts.Get(id)
+		if err != nil {
+			fmt.Println(err)
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		}
+
+		response := UserInfoResponse{
+			UserId:     userInfo.Id,
+			Username:   userInfo.Username,
+			Address:    userInfo.Address,
+			TknAddress: userInfo.TknAddress,
+			ShowAmount: userInfo.IsDefaultShowAmount,
+		}
+
+		return c.JSON(http.StatusOK, response)
+	}
+	return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid numeric Id"})
+}
+func (app *application) getUserInfoByName(c echo.Context) error {
 	user := c.Param("user")
 
 	userInfo, err := app.accounts.GetByUsername(user)

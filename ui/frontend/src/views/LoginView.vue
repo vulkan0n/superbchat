@@ -124,7 +124,7 @@ export default {
                 Login
               </button>
               <RouterLink
-                to="/user/signup"
+                to="/signup"
                 class="inline-block align-baseline font-bold text-sm text-green-600 hover:text-green-800"
                 >Create a page</RouterLink
               >

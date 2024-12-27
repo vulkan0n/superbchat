@@ -65,14 +65,13 @@ export default {
             router.push("/dashboard");
           }
         } else {
-          console.log("error response");
+          console.log(response);
           usernameTakenError.value = true;
           setTimeout(() => {
             usernameTakenError.value = false;
           }, 3000);
         }
       } catch (err) {
-        console.log("error server");
         console.log(err);
         usernameTakenError.value = true;
         setTimeout(() => {

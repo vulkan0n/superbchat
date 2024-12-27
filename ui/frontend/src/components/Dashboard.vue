@@ -1,40 +1,14 @@
 <script>
 import Message from "./Message.vue";
 import { ref, onMounted } from "vue";
+import axios from "axios";
 const fakeAlertUrlObj =
   "192.168.100.6:8900/alert/81f1cd27-d510-4579-97c8-9613e5f63fb2";
-
-const fakeMessagesObj = [
-  {
-    sender: "Vulkan0n",
-    amount: 0.0001,
-    created: "2022-10-31T09:00:00.594Z",
-    message: localStorage.getItem("userId"),
-  },
-  {
-    sender: "Anonymous",
-    amount: 0.00014,
-    created: "2023-10-31T09:00:00.594Z",
-    message:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum",
-  },
-  {
-    sender: "VknToken",
-    amount: 0,
-    created: "2022-12-31T09:00:00.594Z",
-    message: "Get some tokens!",
-    isCashToken: true,
-    tknSymbol: "VKN",
-    tknAmount: 10,
-    tknLogo:
-      "https://gist.githubusercontent.com/vulkan0n/74922802a5d3a8861765e882c3a2db1a/raw/logo.png",
-  },
-];
 
 export default {
   components: { Message },
   setup() {
-    const fakeMessages = ref("");
+    const Messages = ref("");
     const fakeAlertUrl = ref("");
     const copiedUrl = ref(false);
 
@@ -64,13 +38,26 @@ export default {
         copiedUrl.value = false;
       }, 2000);
     };
-
-    onMounted(() => {
-      fakeMessages.value = fakeMessagesObj;
+    onMounted(async () => {
       fakeAlertUrl.value = fakeAlertUrlObj;
+
+      const token = localStorage.getItem("token");
+      try {
+        const superchatsResponse = await axios.post("/superbchat-get", {
+          token,
+        });
+        if (superchatsResponse.statusText == "OK") {
+          Messages.value = superchatsResponse.data;
+          //fakeMessages.value = fakeMessagesObj;
+        } else {
+          console.log(superchatsResponse);
+        }
+      } catch (err) {
+        console.log(err);
+      }
     });
 
-    return { fakeMessages, fakeAlertUrl, copyToClipboard, copiedUrl };
+    return { Messages, fakeAlertUrl, copyToClipboard, copiedUrl };
   },
 };
 </script>
@@ -130,7 +117,7 @@ export default {
         <hr class="my-5" />
         <div>
           <label class="text-gray-700 text-m font-bold mb-2">Messages</label>
-          <div v-for="superbchat in fakeMessages" :key="superbchat.seder">
+          <div v-for="superbchat in Messages" :key="superbchat.seder">
             <message v-bind="superbchat" />
           </div>
         </div>
