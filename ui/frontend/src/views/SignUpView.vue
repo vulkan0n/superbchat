@@ -3,6 +3,22 @@ import { ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import axios from "axios";
 
+const invalidUsernames = [
+  "user-signup",
+  "user-login",
+  "verify-tkn",
+  "user-id",
+  "user",
+  "superbchat",
+  "superbchat-get",
+  "login",
+  "signup",
+  "dashboard",
+  "privacy-policy",
+  "404",
+];
+const usernameRegex = /^[a-zA-Z][a-zA-Z0-9_]{2,14}$/;
+
 export default {
   setup() {
     const username = ref("");
@@ -14,6 +30,7 @@ export default {
     const shortPasswordError = ref(false);
     const differentPasswordError = ref(false);
     const usernameTakenError = ref(false);
+    const usernameInvalidError = ref(false);
     const isLoading = ref(false);
 
     const errorClass = ref("border-red-500");
@@ -26,12 +43,27 @@ export default {
       shortPasswordError.value = password.value.length < 8;
       differentPasswordError.value = password.value != repeatedPassword.value;
 
+      if (invalidUsernames.includes(username.value)) {
+        usernameTakenError.value = true;
+        setTimeout(() => {
+          usernameTakenError.value = false;
+        }, 3000);
+      }
+
+      if (!usernameRegex.test(username.value)) {
+        usernameInvalidError.value = true;
+        setTimeout(() => {
+          usernameInvalidError.value = false;
+        }, 3000);
+      }
+
       if (
         !emptyUserError.value &&
         !emptyPasswordError.value &&
         !shortPasswordError.value &&
         !differentPasswordError.value &&
-        !usernameTakenError.value
+        !usernameTakenError.value &&
+        !usernameInvalidError.value
       ) {
         postUserSignUp();
       }
@@ -92,6 +124,7 @@ export default {
       shortPasswordError,
       differentPasswordError,
       usernameTakenError,
+      usernameInvalidError,
       errorClass,
       verifyAndSignUp,
       isLoading,
@@ -117,7 +150,11 @@ export default {
               </label>
               <input
                 class="shadow appearance-none border rounded w-80 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                :class="emptyUserError || usernameTakenError ? errorClass : ''"
+                :class="
+                  emptyUserError || usernameTakenError || usernameInvalidError
+                    ? errorClass
+                    : ''
+                "
                 id="username"
                 type="text"
                 placeholder="Username"
@@ -128,6 +165,9 @@ export default {
               </p>
               <p v-if="usernameTakenError" class="text-red-500 text-xs italic">
                 This username is already in use.
+              </p>
+              <p v-if="usernameInvalidError" class="text-red-500 text-xs italic">
+                This username is invalid.
               </p>
             </div>
             <div class="mb-4">
