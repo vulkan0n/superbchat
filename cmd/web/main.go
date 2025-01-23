@@ -8,10 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
-	"github.com/alexedwards/scs/postgresstore"
-	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
@@ -19,14 +16,13 @@ import (
 )
 
 type application struct {
-	echo           *echo.Echo
-	infoLog        *log.Logger
-	errorLog       *log.Logger
-	accounts       *models.AccountModel
-	superchats     *models.SuperchatModel
-	templateCache  map[string]*template.Template
-	formDecoder    *form.Decoder
-	sessionManager *scs.SessionManager
+	echo          *echo.Echo
+	infoLog       *log.Logger
+	errorLog      *log.Logger
+	accounts      *models.AccountModel
+	superchats    *models.SuperchatModel
+	templateCache map[string]*template.Template
+	formDecoder   *form.Decoder
 }
 
 func main() {
@@ -51,21 +47,16 @@ func main() {
 
 	formDecoder := *form.NewDecoder()
 
-	sessionManager := scs.New()
-	sessionManager.Store = postgresstore.New(db)
-	sessionManager.Lifetime = 12 * time.Hour
-
 	e := echo.New()
 
 	app := &application{
-		echo:           e,
-		errorLog:       errorLog,
-		infoLog:        infoLog,
-		superchats:     &models.SuperchatModel{DB: db},
-		accounts:       &models.AccountModel{DB: db},
-		templateCache:  templateCache,
-		formDecoder:    &formDecoder,
-		sessionManager: sessionManager,
+		echo:          e,
+		errorLog:      errorLog,
+		infoLog:       infoLog,
+		superchats:    &models.SuperchatModel{DB: db},
+		accounts:      &models.AccountModel{DB: db},
+		templateCache: templateCache,
+		formDecoder:   &formDecoder,
 	}
 	app.routes()
 

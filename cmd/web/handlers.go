@@ -188,11 +188,14 @@ type UserIdBody struct {
 }
 
 type UserInfoResponse struct {
-	UserId     int    `json:"userId"`
-	Username   string `json:"username"`
-	Address    string `json:"address"`
-	TknAddress string `json:"tknAddress"`
-	ShowAmount bool   `json:"showAmount"`
+	UserId          int     `json:"userId"`
+	Username        string  `json:"username"`
+	Address         string  `json:"address"`
+	TknsEnabled     bool    `json:"tknsEnabled"`
+	TknAddress      string  `json:"tknAddress"`
+	MessageMaxChars int     `json:"messageMaxChars"`
+	MinDonation     float64 `json:"minDonation"`
+	ShowAmount      bool    `json:"showAmount"`
 }
 
 func (app *application) getUserInfo(c echo.Context) error {
@@ -206,11 +209,14 @@ func (app *application) getUserInfo(c echo.Context) error {
 		}
 
 		response := UserInfoResponse{
-			UserId:     userInfo.Id,
-			Username:   userInfo.Username,
-			Address:    userInfo.Address,
-			TknAddress: userInfo.TknAddress,
-			ShowAmount: userInfo.IsDefaultShowAmount,
+			UserId:          userInfo.Id,
+			Username:        userInfo.Username,
+			Address:         userInfo.Address,
+			TknsEnabled:     userInfo.TknsEnabled,
+			TknAddress:      userInfo.TknAddress,
+			MessageMaxChars: userInfo.MessageMaxChars,
+			MinDonation:     userInfo.MinDonation,
+			ShowAmount:      userInfo.ShowAmount,
 		}
 
 		return c.JSON(http.StatusOK, response)
@@ -227,11 +233,14 @@ func (app *application) getUserInfoByName(c echo.Context) error {
 	}
 
 	response := UserInfoResponse{
-		UserId:     userInfo.Id,
-		Username:   userInfo.Username,
-		Address:    userInfo.Address,
-		TknAddress: userInfo.TknAddress,
-		ShowAmount: userInfo.IsDefaultShowAmount,
+		UserId:          userInfo.Id,
+		Username:        userInfo.Username,
+		Address:         userInfo.Address,
+		TknsEnabled:     userInfo.TknsEnabled,
+		TknAddress:      userInfo.TknAddress,
+		MessageMaxChars: userInfo.MessageMaxChars,
+		MinDonation:     userInfo.MinDonation,
+		ShowAmount:      userInfo.ShowAmount,
 	}
 
 	return c.JSON(http.StatusOK, response)

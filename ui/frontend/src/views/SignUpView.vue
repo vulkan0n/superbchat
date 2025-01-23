@@ -17,6 +17,10 @@ const invalidUsernames = [
   "privacy-policy",
   "404",
 ];
+
+// Must start with a letter.
+// Can contain letters, numbers, and underscores (_).
+// Length: 3 to 15 characters.
 const usernameRegex = /^[a-zA-Z][a-zA-Z0-9_]{2,14}$/;
 
 export default {

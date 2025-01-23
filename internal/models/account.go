@@ -12,18 +12,32 @@ import (
 )
 
 type Account struct {
-	Id                  int
-	Username            string
-	HashedPassword      []byte
-	Address             string
-	TknAddress          string
-	NameMaxChars        int
-	MessageMaxChars     int
-	MinDonation         float64
-	IsDefaultShowAmount bool
-	Token               string
-	Created             time.Time
+	Id              int
+	Username        string
+	HashedPassword  []byte
+	Address         string
+	TknsEnabled     bool
+	TknAddress      string
+	MessageMaxChars int
+	MinDonation     float64
+	ShowAmount      bool
+	WidgetId        string
+	Created         time.Time
 }
+
+const accountColumns = `
+  id,
+  username,
+  password,
+  address,
+  tkn_enabled,
+  tkn_address,
+  message_max_char,
+  min_donation,
+  show_amount,
+  widget_id,
+  created
+`
 
 type AccountModel struct {
 	DB *sql.DB
@@ -31,8 +45,17 @@ type AccountModel struct {
 
 func (m *AccountModel) Insert(username, password string) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
-	stmt := `INSERT INTO account (username, password, address, name_max_char, message_max_char, min_donation, show_amount, created)
-  VALUES($1, $2, '', 25, 300, 0.001, true, CURRENT_TIMESTAMP)`
+	stmt := `INSERT INTO account (
+  username,
+  password,
+  address,
+  tkn_enabled,
+  tkn_address,
+  message_max_char,
+  min_donation,
+  show_amount,
+  created)
+VALUES($1, $2, '', true, '', 300, 0.00000547, true, CURRENT_TIMESTAMP)`
 	_, err = m.DB.Exec(stmt, username, string(hashedPassword))
 	if err != nil {
 		var posgreSQLError *pq.Error
@@ -50,18 +73,26 @@ func (m *AccountModel) Insert(username, password string) error {
 func (m *AccountModel) Update(account *Account) error {
 	stmt := `UPDATE account
       SET address          = $1,
-	      name_max_char    = $2,
-		  message_max_char = $3,
-		  min_donation     = $4,
-		  show_amount      = $5
-	  WHERE id = $6`
-	_, err := m.DB.Exec(stmt, account.Address, account.NameMaxChars, account.MessageMaxChars,
-		account.MinDonation, account.IsDefaultShowAmount, account.Id)
+	      tkn_enabled      = $2,
+		  tkn_address      = $3,
+		  message_max_char = $4,
+		  min_donation     = $5,
+		  show_amount      = $6
+	  WHERE id = $7`
+	_, err := m.DB.Exec(stmt,
+		account.Address,
+		account.TknsEnabled,
+		account.TknAddress,
+		account.MessageMaxChars,
+		account.MinDonation,
+		account.ShowAmount,
+		account.Id)
 	if err != nil {
 		return err
 	}
 	return nil
 }
+
 func (m *AccountModel) Authenticate(username, password string) (int, error) {
 	var id int
 	var hashedPassword []byte
@@ -88,26 +119,6 @@ func (m *AccountModel) Authenticate(username, password string) (int, error) {
 	return id, nil
 }
 
-const accountColumns = `
-  id, 
-  username,
-  password, 
-  address, 
-  tkn_address, 
-  name_max_char, 
-  message_max_char, 
-  min_donation, 
-  show_amount, 
-  token, 
-  created
-`
-
-func (m *AccountModel) Exist(token string) bool {
-	stmt := fmt.Sprintf(`SELECT %s FROM account WHERE token = $1`, accountColumns)
-	_, err := GetOneByQuery(m, stmt, token)
-	return (err == nil)
-}
-
 func (m *AccountModel) Get(id int) (*Account, error) {
 	stmt := fmt.Sprintf(`SELECT %s FROM account WHERE id = $1`, accountColumns)
 	return GetOneByQuery(m, stmt, id)
@@ -127,12 +138,12 @@ func GetOneByQuery(m *AccountModel, stmt string, id any) (*Account, error) {
 		&s.Username,
 		&s.HashedPassword,
 		&s.Address,
+		&s.TknsEnabled,
 		&s.TknAddress,
-		&s.NameMaxChars,
 		&s.MessageMaxChars,
 		&s.MinDonation,
-		&s.IsDefaultShowAmount,
-		&s.Token,
+		&s.ShowAmount,
+		&s.WidgetId,
 		&s.Created)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

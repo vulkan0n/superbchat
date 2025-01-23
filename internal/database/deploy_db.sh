@@ -5,13 +5,11 @@
 cp -r ../database/ ~postgres/
 cd ~postgres/
 
-#Run scripts with psql: db_superbchat.sql  account.sql  session.sql  superchat.sql
+#Run scripts with psql: db_superbchat.sql  account.sql  superchat.sql
 echo "Creating 'superbchat' database"
 sudo -u postgres -H -- psql -U postgres -d postgres -f database/db_superbchat.sql
 echo "Creating 'account' table"
 sudo -u postgres -H -- psql -U postgres -d superbchat -f database/account.sql
-echo "Creating 'session' table"
-sudo -u postgres -H -- psql -U postgres -d superbchat -f database/session.sql
 echo "Creating 'superchat' table"
 sudo -u postgres -H -- psql -U postgres -d superbchat -f database/superchat.sql
 #Create 'web' user
