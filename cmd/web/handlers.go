@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -183,6 +184,76 @@ func (app *application) postSuperchatsByTkn(c echo.Context) error {
 	}
 }
 
+type PostSettingsBody struct {
+	Address         string  `json:"address"`
+	TknsEnabled     bool    `json:"tknsEnabled"`
+	TknAddress      string  `json:"tknAddress"`
+	MessageMaxChars int     `json:"messageMaxChars"`
+	MinDonation     float64 `json:"minDonation"`
+	ShowAmount      bool    `json:"showAmount"`
+}
+
+func (app *application) postUserSettingsByTkn(c echo.Context) error {
+	r := c.Request()
+
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Token missing"})
+	}
+
+	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+	if tokenStr == authHeader {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid token format"})
+	}
+
+	userId, err := validateToken(tokenStr)
+	if err != nil {
+		fmt.Println(err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Token"})
+	}
+
+	b, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println(err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Body Request"})
+	}
+	settingsBody := PostSettingsBody{
+		Address:         "default",
+		TknsEnabled:     true,
+		TknAddress:      "address",
+		MessageMaxChars: 150,
+		MinDonation:     1,
+		ShowAmount:      true,
+	}
+	err = json.Unmarshal(b, &settingsBody)
+	if err != nil {
+		fmt.Println(err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
+	}
+
+	if userId >= 0 {
+		settings := models.Account{
+			Id:              userId,
+			Address:         settingsBody.Address,
+			TknsEnabled:     settingsBody.TknsEnabled,
+			TknAddress:      settingsBody.TknAddress,
+			MessageMaxChars: settingsBody.MessageMaxChars,
+			MinDonation:     settingsBody.MinDonation,
+			ShowAmount:      settingsBody.ShowAmount,
+		}
+
+		err := app.accounts.Update(&settings)
+		if err != nil {
+			fmt.Println(err)
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		}
+
+		return c.JSON(http.StatusOK, "Settings Updated")
+	} else {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid token"})
+	}
+}
+
 type UserIdBody struct {
 	UserId int `json:"userId"`
 }
@@ -300,9 +371,5 @@ func (app *application) getSettings(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
 	}
 
-	return c.String(http.StatusOK, "Default")
-}
-
-func (app *application) postSettings(c echo.Context) error {
 	return c.String(http.StatusOK, "Default")
 }

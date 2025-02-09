@@ -9,6 +9,7 @@ const invalidUsernames = [
   "verify-tkn",
   "user-id",
   "user",
+  "settings",
   "superbchat",
   "superbchat-get",
   "login",
