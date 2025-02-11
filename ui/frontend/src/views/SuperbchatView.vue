@@ -4,17 +4,21 @@ import { onMounted, ref } from "vue";
 import axios from "axios";
 
 const walletAddress = ref();
+const tknEnabled = ref(true);
 const cashAddress = ref();
 const isValidUser = ref(true);
+const minDonation = ref(0.00000547);
+const donationAmount = ref(0.00000547);
+const msgMaxChar = ref(300);
+const showAmount = ref(true);
 
 export default {
   setup() {
     const donatorName = ref("Anonymous");
-    const donationAmount = ref(0.00000547);
     const donationMessage = ref("");
-    const showAmount = ref(true);
     const isCashAddrs = ref(false);
     var userId = 0;
+    const isValidSend = ref(false);
 
     const donationLowError = ref(false);
     const errorClass = ref("border-red-500");
@@ -30,7 +34,12 @@ export default {
     const user = useRoute().params.user;
 
     async function verifyAndPay() {
-      donationLowError.value = donationAmount.value < 0.00000547;
+      if (donationAmount.value < minDonation.value) {
+        donationLowError.value = true;
+        setTimeout(() => {
+          donationLowError.value = false;
+        }, 3000);
+      }
       if (!donationLowError.value) {
         try {
           const superbchatResponse = await axios.post("/superbchat", {
@@ -43,6 +52,10 @@ export default {
           });
           if (superbchatResponse.statusText == "OK") {
             console.log("Superchat Sent");
+            isValidSend.value = true;
+            setTimeout(() => {
+              isValidSend.value = false;
+            }, 3000);
           }
         } catch (err) {
           console.log(err);
@@ -53,6 +66,7 @@ export default {
         }
       }
     }
+
     function onQRChange() {
       const currentVal = isCashAddrs.value;
       isCashAddrs.value = !currentVal;
@@ -63,8 +77,12 @@ export default {
         const userInfoResponse = await axios.get("/user/" + user);
         if (userInfoResponse.statusText == "OK") {
           walletAddress.value = userInfoResponse.data.address;
+          tknEnabled.value = userInfoResponse.data.tknsEnabled;
           cashAddress.value = userInfoResponse.data.tknAddress;
           showAmount.value = userInfoResponse.data.showAmount;
+          minDonation.value = userInfoResponse.data.minDonation;
+          donationAmount.value = userInfoResponse.data.minDonation;
+          msgMaxChar.value = userInfoResponse.data.messageMaxChars;
           userId = userInfoResponse.data.userId;
         } else {
           router.push({ name: "404" });
@@ -92,6 +110,10 @@ export default {
       isCashAddrs,
       cashAddress,
       onQRChange,
+      tknEnabled,
+      minDonation,
+      msgMaxChar,
+      isValidSend,
     };
   },
 };
@@ -122,6 +144,7 @@ export default {
                 id="donatorName"
                 type="text"
                 placeholder="Anonymous"
+                maxlength="15"
                 v-model="donatorName"
               />
             </div>
@@ -137,10 +160,11 @@ export default {
                 :class="donationLowError ? errorClass : ''"
                 id="donationAmount"
                 type="number"
+                step="0.000001"
                 v-model="donationAmount"
               />
               <p v-if="donationLowError" class="text-red-500 text-xs italic">
-                Minimun donation amount must be higher than 0.00000546.
+                Minimun donation amount must be higher than {{ minDonation }}
               </p>
             </div>
             <div class="mb-4">
@@ -154,7 +178,7 @@ export default {
                 class="shadow appearance-none border rounded w-80 py-2 px-3 h-24 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 id="donationMessage"
                 type="text"
-                placeholder=""
+                :maxlength="msgMaxChar"
                 v-model="donationMessage"
               ></textarea>
             </div>
@@ -179,13 +203,15 @@ export default {
                   >Address</a
                 >
               </li>
-              <li class="me-2">
-                <a
-                  :class="isCashAddrs ? selectedTabClass : unselectedTabClass"
-                  @click="onQRChange"
-                  >Cash Address</a
-                >
-              </li>
+              <div v-if="tknEnabled">
+                <li class="me-2">
+                  <a
+                    :class="isCashAddrs ? selectedTabClass : unselectedTabClass"
+                    @click="onQRChange"
+                    >Cash Address</a
+                  >
+                </li>
+              </div>
             </ul>
 
             <div class="w-80" v-show="isValidUser">
@@ -210,6 +236,9 @@ export default {
               >
                 Send Donation!
               </button>
+              <p v-if="isValidSend" class="text-emerald-700 text-xs italic">
+                Message Sent!
+              </p>
             </div>
           </div>
         </div>
