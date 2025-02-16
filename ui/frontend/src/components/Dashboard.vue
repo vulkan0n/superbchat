@@ -1,16 +1,20 @@
 <script>
 import Message from "./Message.vue";
-import { ref, onMounted } from "vue";
+import { computed, ref, onMounted, watch } from "vue";
 import axios from "axios";
-const fakeAlertUrlObj =
-  "192.168.100.6:8900/alert/81f1cd27-d510-4579-97c8-9613e5f63fb2";
 
 export default {
+  props: {
+    widgetId: {
+      type: String,
+      required: true,
+    },
+  },
   components: { Message },
-  setup() {
+  setup(props) {
     const Messages = ref("");
-    const fakeAlertUrl = ref("");
     const copiedUrl = ref(false);
+    const AlertUrl = ref("");
 
     const unsecuredCopyToClipboard = (text) => {
       const textArea = document.createElement("textarea");
@@ -27,7 +31,7 @@ export default {
     };
 
     const copyToClipboard = () => {
-      var content = fakeAlertUrl.value;
+      var content = AlertUrl.value;
       if (window.isSecureContext && navigator.clipboard) {
         navigator.clipboard.writeText(content);
       } else {
@@ -38,9 +42,17 @@ export default {
         copiedUrl.value = false;
       }, 2000);
     };
-    onMounted(async () => {
-      fakeAlertUrl.value = fakeAlertUrlObj;
 
+    watch(
+      () => props.widgetId,
+      (newWidgetId) => {
+        if (newWidgetId) {
+          AlertUrl.value = computed(() => `${window.location.origin}/alert/${newWidgetId}`).value;
+        }
+      }
+    );
+
+    onMounted(async () => {
       const token = localStorage.getItem("token");
       try {
         const superchatsResponse = await axios.post("/superbchat-get", {
@@ -48,7 +60,6 @@ export default {
         });
         if (superchatsResponse.statusText == "OK") {
           Messages.value = superchatsResponse.data;
-          //fakeMessages.value = fakeMessagesObj;
         } else {
           console.log(superchatsResponse);
         }
@@ -57,7 +68,12 @@ export default {
       }
     });
 
-    return { Messages, fakeAlertUrl, copyToClipboard, copiedUrl };
+    return {
+      Messages,
+      AlertUrl,
+      copyToClipboard,
+      copiedUrl,
+    };
   },
 };
 </script>
@@ -101,9 +117,9 @@ export default {
           <div class="flex space-x-2">
             <input
               class="shadow border block rounded w-full mr-3 py-2 px-3 text-gray-700 leading-normal focus:outline-none focus:shadow-outline"
-              id="fakeAlertUrl"
+              id="AlertUrl"
               type="text"
-              :value="fakeAlertUrl"
+              :value="AlertUrl"
               readonly
             />
             <button
@@ -117,9 +133,12 @@ export default {
         <hr class="my-5" />
         <div>
           <label class="text-gray-700 text-m font-bold mb-2">Messages</label>
-          <div v-for="superbchat in Messages" :key="superbchat.seder">
-            <message v-bind="superbchat" />
+          <div v-if="Messages.length > 0">
+            <div v-for="superbchat in Messages" :key="superbchat.seder">
+              <message v-bind="superbchat" />
+            </div>
           </div>
+          <p v-else class="text-gray-500">No messages!</p>
         </div>
       </div>
     </div>

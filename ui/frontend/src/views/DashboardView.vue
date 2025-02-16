@@ -7,6 +7,7 @@ import Wallet from "@/components/Wallet.vue";
 import { useRouter } from "vue-router";
 
 const userName = ref("");
+const widgetId = ref("");
 
 export default {
   components: { Dashboard, Settings, Wallet },
@@ -27,6 +28,7 @@ export default {
 
         if (userInfoResponse.statusText == "OK") {
           userName.value = userInfoResponse.data.username;
+          widgetId.value = userInfoResponse.data.widgetId;
         } else {
           console.log(userInfoResponse);
           router.push({ name: "404" });
@@ -36,7 +38,7 @@ export default {
         router.push({ name: "404" });
       }
     });
-    return { Dashboard, userName, showNavMenuMobile, selectedTab, logout };
+    return { Dashboard, userName, showNavMenuMobile, selectedTab, logout, widgetId };
   },
 };
 </script>
@@ -153,7 +155,7 @@ export default {
     </div>
   </nav>
   <div class="mt-24 mb-14 mx-3 md:mx-20">
-    <dashboard v-show="selectedTab == 'Dashboard'" />
+    <dashboard v-show="selectedTab == 'Dashboard'" :widgetId="widgetId" />
     <settings v-show="selectedTab == 'Settings'" />
     <wallet v-show="selectedTab == 'Wallet'" />
   </div>

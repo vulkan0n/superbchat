@@ -18,6 +18,7 @@ func (app *application) routes() {
 	app.echo.GET("/user-id/:id", app.getUserInfo)
 	app.echo.GET("/user/:user", app.getUserInfoByName)
 	app.echo.POST("/superbchat", app.postSuperbchat)
+	app.echo.DELETE("/superbchat/:id", app.deleteSuperchat)
 	app.echo.POST("/superbchat-get", app.postSuperchatsByTkn)
 	app.echo.POST("/settings", app.postUserSettingsByTkn)
 

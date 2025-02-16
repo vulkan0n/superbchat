@@ -1,6 +1,14 @@
 <script>
+import { ref } from "vue";
+import axios from "axios";
+import { useRouter } from "vue-router";
+
 export default {
   props: {
+    id: {
+      type: Number,
+      required: true,
+    },
     name: {
       type: String,
       required: true,
@@ -35,14 +43,32 @@ export default {
     },
   },
   setup(props) {
-    function onDelete() {
-      console.log("Delete: " + props.name);
+    const isValidDelete = ref(false);
+    const router = useRouter();
+
+    async function onDelete() {
+      try {
+        const response = await axios.delete(`/superbchat/${props.id}`);
+
+        if (response.status === 200) {
+          console.log("Superchat deleted successfully");
+          isValidDelete.value = true; // Show success message
+
+          setTimeout(() => {
+            isValidDelete.value = false;
+          }, 3000);
+        }
+      } catch (err) {
+        console.error("Error deleting superchat:", err);
+      } finally {
+        window.location.reload();
+      }
     }
 
     const createdDate = new Date(props.created);
     const createdDateStr = createdDate.toLocaleDateString();
 
-    return { onDelete, createdDateStr };
+    return { onDelete, createdDateStr, isValidDelete };
   },
 };
 </script>

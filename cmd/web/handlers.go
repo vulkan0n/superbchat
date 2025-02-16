@@ -264,6 +264,7 @@ type UserInfoResponse struct {
 	Address         string  `json:"address"`
 	TknsEnabled     bool    `json:"tknsEnabled"`
 	TknAddress      string  `json:"tknAddress"`
+	WidgetId        string  `json:"widgetId"`
 	MessageMaxChars int     `json:"messageMaxChars"`
 	MinDonation     float64 `json:"minDonation"`
 	ShowAmount      bool    `json:"showAmount"`
@@ -285,6 +286,7 @@ func (app *application) getUserInfo(c echo.Context) error {
 			Address:         userInfo.Address,
 			TknsEnabled:     userInfo.TknsEnabled,
 			TknAddress:      userInfo.TknAddress,
+			WidgetId:        userInfo.WidgetId,
 			MessageMaxChars: userInfo.MessageMaxChars,
 			MinDonation:     userInfo.MinDonation,
 			ShowAmount:      userInfo.ShowAmount,
@@ -309,6 +311,7 @@ func (app *application) getUserInfoByName(c echo.Context) error {
 		Address:         userInfo.Address,
 		TknsEnabled:     userInfo.TknsEnabled,
 		TknAddress:      userInfo.TknAddress,
+		WidgetId:        userInfo.WidgetId,
 		MessageMaxChars: userInfo.MessageMaxChars,
 		MinDonation:     userInfo.MinDonation,
 		ShowAmount:      userInfo.ShowAmount,
@@ -372,4 +375,20 @@ func (app *application) getSettings(c echo.Context) error {
 	}
 
 	return c.String(http.StatusOK, "Default")
+}
+
+func (app *application) deleteSuperchat(c echo.Context) error {
+	idParam := c.Param("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid ID"})
+	}
+
+	err = app.superchats.Delete(id)
+	if err != nil {
+		app.infoLog.Println(err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Could not delete superchat"})
+	}
+
+	return c.String(http.StatusOK, "Superchat deleted")
 }

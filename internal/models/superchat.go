@@ -54,6 +54,26 @@ func (m *SuperchatModel) Insert(txId string, name string, message string, amount
 	return id, nil
 }
 
+func (m *SuperchatModel) Delete(id int) error {
+	query := `DELETE FROM superchat WHERE id = $1`
+
+	result, err := m.DB.Exec(query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("Superchat not found")
+	}
+
+	return nil
+}
+
 func scanSuperchat(row *sql.Row) (*Superchat, error) {
 	s := &Superchat{}
 	err := row.Scan(
