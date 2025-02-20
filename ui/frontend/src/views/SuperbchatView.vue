@@ -49,6 +49,9 @@ export default {
 
     let txId;
     let tknCategoryId;
+    let tknSymbol;
+    let tknLogo;
+
 
     async function awaitDontationBCH() {
       if (donationAmount.value < minDonation.value) {
@@ -59,12 +62,15 @@ export default {
       }
       if (!donationLowError.value) {
         waitingForTx.value = true;
-        wallet.watchAddressTransactions(async (tx) => {
+        const cancelWatch = wallet.watchAddressTransactions(async (tx) => {
           if (tx.vout[0].value == donationAmount.value) {
             txId = tx.txid;
             tknCategoryId = "";
             waitingForTx.value = false;
+            tknSymbol = "";
+            tknLogo = "";
             await sendSuperbchat();
+            await cancelWatch();
           }
         });
       }
@@ -72,23 +78,31 @@ export default {
 
     async function awaitDontationTKN() {
       waitingForTx.value = true;
-      tknWallet.watchAddressTransactions(async (tx) => {
-        console.log("TKN transaction:", tx);
+      tknSymbol = "";
+      tknLogo = "";
+
+      const cancelWatch = tknWallet.watchAddressTransactions(async (tx) => {
         txId = tx.txid;
         tknCategoryId = tx.vout[0].tokenData.category;
-        /*try {
-          let tknCategoryId = tx.vout[0].tokenData.category;
+        try {
           await BCMR.addMetadataRegistryAuthChain({
             transactionHash: tknCategoryId,
           });
+          const info = BCMR.getTokenInfo(tknCategoryId);
+          tknSymbol = info.token.symbol;
+          tknLogo = info.uris.icon;
+          const rawAmount = parseFloat(tx.vout[0].tokenData.amount);
+          donationAmount.value = rawAmount / Math.pow(10, info.token.decimals);
         } catch (err) {
-          console.log(err);
+          console.warn("BCMR error with categoryId: " + tknCategoryId);
+          console.warn(err);
+          tknSymbol = "CASHTOKEN";
+          tknLogo = "https://cashonize.com/images/tokenicon.png";
+          donationAmount.value = parseFloat(tx.vout[0].tokenData.amount);
         }
-        const info = BCMR.getTokenInfo(tx.vout[0].tokenData.category);
-        console.log(info);*/
         waitingForTx.value = false;
-        donationAmount.value = parseFloat(tx.vout[0].tokenData.amount);
-        sendSuperbchat();
+        await sendSuperbchat();
+        await cancelWatch();
       });
     }
 
@@ -99,12 +113,13 @@ export default {
           name: donatorName.value,
           message: donationMessage.value,
           amount: donationAmount.value,
-          tknSymbol: tknCategoryId,
+          tknCategory: tknCategoryId,
+          tknSymbol: tknSymbol,
+          tknLogo: tknLogo,
           isHidden: !showAmount.value,
           recipient: userId,
           isTkn: isTknAddrs.value,
         };
-        console.log(postBody);
         const superbchatResponse = await axios.post("/superbchat", postBody);
         if (superbchatResponse.status === 200) {
           console.log("Superchat Sent");
@@ -115,7 +130,7 @@ export default {
           }, 3000);
         }
       } catch (err) {
-        console.log(err);
+        console.error(err);
       } finally {
         setTimeout(() => {
           router.push(route.fullPath);
@@ -150,11 +165,9 @@ export default {
       }
       if (walletAddress.value) {
         wallet = await Wallet.watchOnly(walletAddress.value);
-        console.log("BCH Wallet:", wallet);
       }
       if (tknEnabled.value && tknAddress.value) {
         tknWallet = await Wallet.watchOnly(tknAddress.value);
-        console.log("TKN Wallet:", tknWallet);
       }
     });
 

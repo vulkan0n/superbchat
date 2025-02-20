@@ -9,13 +9,7 @@
     >
       <div class="flex items-center space-x-4">
         <img
-          v-if="!alert.isTkn"
-          src="../assets/bch.svg"
-          class="h-24 w-24 rounded-full"
-          alt="Avatar"
-        /><img
-          v-if="alert.isTkn"
-          src="https://gist.github.com/vulkan0n/74922802a5d3a8861765e882c3a2db1a/raw/1c8b5bbcbb8fa282c672fbcebefbf4ac52bfdf34/logo.png"
+          :src="alert.isTkn ? alert.tknLogo : bchLogo"
           class="h-24 w-24 rounded-full"
           alt="Avatar"
         />
@@ -28,7 +22,7 @@
             v-if="alert.showAmount"
             class="text-2xl font-bold text-green-600"
           >
-            BCH {{ alert.amount }}
+            {{ alert.amount }} {{ alert.tknSymbol }}
           </div>
           <div class="text-lg text-gray-500">{{ alert.message }}</div>
         </div>
@@ -40,22 +34,33 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
+import bchLogo from "../assets/bch.svg";
 
 const alert = ref(null);
 
-function triggerDonationAlert(username, amount, message, isTkn, showAmount) {
+function triggerDonationAlert(
+  username,
+  amount,
+  message,
+  isTkn,
+  showAmount,
+  tknSymbol,
+  tknLogo
+) {
   alert.value = {
     username,
     amount,
     message,
     isTkn,
     showAmount,
+    tknSymbol: isTkn ? tknSymbol : "BCH",
+    tknLogo,
   };
 
-  // Clear the alert after 5 seconds
+  // Clear the alert after 8 seconds
   setTimeout(() => {
     alert.value = null;
-  }, 5000);
+  }, 8000);
 }
 
 const widgetId = useRoute().params.uuid;
@@ -69,7 +74,15 @@ const connectWebSocket = () => {
   socket.onmessage = (event) => {
     const chat = JSON.parse(event.data);
     if (chat.widget_id === widgetId) {
-      triggerDonationAlert(chat.name, chat.amount, chat.message, chat.isTkn , !chat.isHidden);
+      triggerDonationAlert(
+        chat.name,
+        chat.amount,
+        chat.message,
+        chat.isTkn,
+        !chat.isHidden,
+        chat.tknSymbol,
+        chat.tknLogo
+      );
     }
   };
 

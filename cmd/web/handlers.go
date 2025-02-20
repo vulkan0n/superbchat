@@ -321,14 +321,16 @@ func (app *application) getUserInfoByName(c echo.Context) error {
 }
 
 type postSuperbchatBody struct {
-	TxId      string  `json:"txId"`
-	Name      string  `json:"name"`
-	Message   string  `json:"message"`
-	Amount    float64 `json:"amount"`
-	TknSymbol string  `json:"tknSymbol"`
-	IsHidden  bool    `json:"isHidden"`
-	Recipient int     `json:"recipient"`
-	IsTkn     bool    `json:"isTkn"`
+	TxId        string  `json:"txId"`
+	Name        string  `json:"name"`
+	Message     string  `json:"message"`
+	Amount      float64 `json:"amount"`
+	TknCategory string  `json:"tknCategory"`
+	TknSymbol   string  `json:"tknSymbol"`
+	TknLogo     string  `json:"tknLogo"`
+	IsHidden    bool    `json:"isHidden"`
+	Recipient   int     `json:"recipient"`
+	IsTkn       bool    `json:"isTkn"`
 }
 
 func (app *application) postSuperbchat(c echo.Context) error {
@@ -339,21 +341,24 @@ func (app *application) postSuperbchat(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Body Request"})
 	}
 	n := postSuperbchatBody{
-		TxId:      "default",
-		Name:      "default",
-		Message:   "default",
-		Amount:    0,
-		TknSymbol: "default",
-		IsHidden:  false,
-		Recipient: 0,
-		IsTkn:     false,
+		TxId:        "default",
+		Name:        "default",
+		Message:     "default",
+		Amount:      0,
+		TknCategory: "default",
+		TknSymbol:   "default",
+		TknLogo:     "default",
+		IsHidden:    false,
+		Recipient:   0,
+		IsTkn:       false,
 	}
 	err = json.Unmarshal(b, &n)
 	if err != nil {
 		fmt.Println(err)
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
 	}
-	_, err = app.superchats.Insert(n.TxId, n.Name, n.Message, n.Amount, n.TknSymbol, n.IsHidden, n.Recipient)
+	_, err = app.superchats.Insert(n.TxId, n.Name, n.Message, n.Amount,
+		n.TknCategory, n.TknSymbol, n.TknLogo, n.IsHidden, n.Recipient)
 
 	if err != nil {
 		app.infoLog.Println(err)
@@ -367,21 +372,25 @@ func (app *application) postSuperbchat(c echo.Context) error {
 	}
 
 	type superbchatMessage struct {
-		WidgetId string  `json:"widget_id"`
-		Name     string  `json:"name"`
-		Message  string  `json:"message"`
-		Amount   float64 `json:"amount"`
-		IsHidden bool    `json:"isHidden"`
-		IsTkn    bool    `json:"isTkn"`
+		WidgetId  string  `json:"widget_id"`
+		Name      string  `json:"name"`
+		Message   string  `json:"message"`
+		Amount    float64 `json:"amount"`
+		IsHidden  bool    `json:"isHidden"`
+		IsTkn     bool    `json:"isTkn"`
+		TknSymbol string  `json:"tknSymbol"`
+		TknLogo   string  `json:"tknLogo"`
 	}
 
 	msg := superbchatMessage{
-		WidgetId: widgetId,
-		Name:     n.Name,
-		Message:  n.Message,
-		Amount:   n.Amount,
-		IsHidden: n.IsHidden,
-		IsTkn:    n.IsTkn,
+		WidgetId:  widgetId,
+		Name:      n.Name,
+		Message:   n.Message,
+		Amount:    n.Amount,
+		IsHidden:  n.IsHidden,
+		IsTkn:     n.IsTkn,
+		TknSymbol: n.TknSymbol,
+		TknLogo:   n.TknLogo,
 	}
 
 	messageBytes, err := json.Marshal(msg)
