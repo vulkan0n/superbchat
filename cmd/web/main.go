@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"flag"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -15,13 +14,12 @@ import (
 )
 
 type application struct {
-	echo          *echo.Echo
-	infoLog       *log.Logger
-	errorLog      *log.Logger
-	accounts      *models.AccountModel
-	superchats    *models.SuperchatModel
-	templateCache map[string]*template.Template
-	wsHub         *WebSocketHub
+	echo       *echo.Echo
+	infoLog    *log.Logger
+	errorLog   *log.Logger
+	accounts   *models.AccountModel
+	superchats *models.SuperchatModel
+	wsHub      *WebSocketHub
 }
 
 func main() {
@@ -38,22 +36,16 @@ func main() {
 
 	defer db.Close()
 
-	templateCache, err := newTemplateCache()
-	if err != nil {
-		errorLog.Fatal(err)
-	}
-
 	wsHub := newWebSocketHub()
 	e := echo.New()
 
 	app := &application{
-		echo:          e,
-		errorLog:      errorLog,
-		infoLog:       infoLog,
-		superchats:    &models.SuperchatModel{DB: db},
-		accounts:      &models.AccountModel{DB: db},
-		templateCache: templateCache,
-		wsHub:         wsHub,
+		echo:       e,
+		errorLog:   errorLog,
+		infoLog:    infoLog,
+		superchats: &models.SuperchatModel{DB: db},
+		accounts:   &models.AccountModel{DB: db},
+		wsHub:      wsHub,
 	}
 	app.routes()
 
