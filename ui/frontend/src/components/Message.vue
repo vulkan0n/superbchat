@@ -1,7 +1,7 @@
 <script>
 import { ref } from "vue";
 import axios from "axios";
-import { useRouter } from "vue-router";
+import bchLogo from "../assets/bitcoin-cash-bch-logo.svg";
 
 export default {
   props: {
@@ -29,22 +29,25 @@ export default {
       type: Boolean,
       required: false,
     },
-    tknSymbol: {
+    tknCategory: {
       type: String,
       required: false,
     },
-    tknAmount: {
-      type: Number,
+    tknSymbol: {
+      type: String,
       required: false,
     },
     tknLogo: {
       type: String,
       required: false,
     },
+    txId: {
+      type: String,
+      required: false,
+    },
   },
   setup(props) {
     const isValidDelete = ref(false);
-    const router = useRouter();
 
     async function onDelete() {
       try {
@@ -65,10 +68,15 @@ export default {
       }
     }
 
+    props.isCashToken = props.tknSymbol != "";
+    if (!props.isCashToken) {
+      props.tknSymbol = "BCH";
+    }
+
     const createdDate = new Date(props.created);
     const createdDateStr = createdDate.toLocaleDateString();
 
-    return { onDelete, createdDateStr, isValidDelete };
+    return { onDelete, createdDateStr, isValidDelete, bchLogo };
   },
 };
 </script>
@@ -80,27 +88,18 @@ export default {
   >
     <footer class="flex justify-between items-center mb-2">
       <div class="flex items-center">
-        <p
-          v-if="!isCashToken"
-          class="inline-flex items-center mr-3 text-sm text-gray-900 dark:text-white font-semibold"
+        <a
+          class="inline-flex items-center mr-3 text-sm text-gray-900 hover:underline dark:text-white font-semibold"
+          :href="`https://blockchair.com/bitcoin-cash/transaction/${txId}`"
+          target="_blank"
         >
           <img
             class="mr-2 w-6 h-6 rounded-full"
-            src="../assets/bitcoin-cash-bch-logo.svg"
-            alt="BitcoinCash Logo"
-          />{{ name }} ({{ amount }} BCH)
-        </p>
-        <p
-          v-if="isCashToken"
-          class="inline-flex items-center mr-3 text-sm text-gray-900 dark:text-white font-semibold"
-        >
-          <img
-            class="mr-2 w-6 h-6 rounded-full"
-            :src="tknLogo"
+            :src="isCashToken ? tknLogo : bchLogo"
             alt="Token Logo"
-          />{{ name }} ({{ tknAmount }} {{ tknSymbol }})
-        </p>
-        <p class="text-sm text-gray-600 dark:text-gray-400">
+          />{{ name }} ({{ amount }} {{ tknSymbol }})
+        </a>
+        <p class="text-sm mr-4 text-gray-600 dark:text-gray-400">
           <time pubdate="" :title="createdDateStr">{{ createdDateStr }}</time>
         </p>
       </div>

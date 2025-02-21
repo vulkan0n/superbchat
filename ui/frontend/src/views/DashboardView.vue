@@ -3,14 +3,13 @@ import { ref, onMounted } from "vue";
 import axios from "axios";
 import Dashboard from "../components/Dashboard.vue";
 import Settings from "@/components/Settings.vue";
-import Wallet from "@/components/Wallet.vue";
 import { useRouter } from "vue-router";
 
 const userName = ref("");
 const widgetId = ref("");
 
 export default {
-  components: { Dashboard, Settings, Wallet },
+  components: { Dashboard, Settings },
   setup() {
     let showNavMenuMobile = ref(false);
     let selectedTab = ref("Dashboard");
@@ -38,7 +37,14 @@ export default {
         router.push({ name: "404" });
       }
     });
-    return { Dashboard, userName, showNavMenuMobile, selectedTab, logout, widgetId };
+    return {
+      Dashboard,
+      userName,
+      showNavMenuMobile,
+      selectedTab,
+      logout,
+      widgetId,
+    };
   },
 };
 </script>
@@ -131,19 +137,6 @@ export default {
           <li>
             <button
               class="block py-2 px-3 text-gray-900 rounded md:p-0 md:hover:bg-transparent dark:text-white dark:hover:text-white dark:border-gray-700"
-              :class="
-                selectedTab == 'Wallet'
-                  ? 'font-bold bg-emerald-700 md:bg-transparent'
-                  : 'md:hover:underline md:dark:hover:underline dark:hover:bg-gray-700 '
-              "
-              @click="selectedTab = 'Wallet'"
-            >
-              Wallet
-            </button>
-          </li>
-          <li>
-            <button
-              class="block py-2 px-3 text-gray-900 rounded md:p-0 md:hover:bg-transparent dark:text-white dark:hover:text-white dark:border-gray-700"
               :class="'md:hover:underline md:dark:hover:underline dark:hover:bg-gray-700 '"
               @click="logout"
             >
@@ -157,6 +150,5 @@ export default {
   <div class="mt-24 mb-14 mx-3 md:mx-20">
     <dashboard v-show="selectedTab == 'Dashboard'" :widgetId="widgetId" />
     <settings v-show="selectedTab == 'Settings'" />
-    <wallet v-show="selectedTab == 'Wallet'" />
   </div>
 </template>
