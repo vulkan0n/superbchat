@@ -122,7 +122,6 @@ export default {
         };
         const superbchatResponse = await axios.post("/superbchat", postBody);
         if (superbchatResponse.status === 200) {
-          console.log("Superchat Sent");
           isValidSend.value = true;
           donationMessage.value = "";
           setTimeout(() => {

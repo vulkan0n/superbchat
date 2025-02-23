@@ -54,7 +54,6 @@ export default {
         const response = await axios.delete(`/superbchat/${props.id}`);
 
         if (response.status === 200) {
-          console.log("Superchat deleted successfully");
           isValidDelete.value = true; // Show success message
 
           setTimeout(() => {

@@ -61,10 +61,10 @@ export default {
         if (superchatsResponse.statusText == "OK") {
           Messages.value = superchatsResponse.data;
         } else {
-          console.log(superchatsResponse);
+          console.error(superchatsResponse);
         }
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
     });
 

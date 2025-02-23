@@ -29,11 +29,11 @@ export default {
           userName.value = userInfoResponse.data.username;
           widgetId.value = userInfoResponse.data.widgetId;
         } else {
-          console.log(userInfoResponse);
+          console.error(userInfoResponse);
           router.push({ name: "404" });
         }
       } catch (err) {
-        console.log(err);
+        console.error(err);
         router.push({ name: "404" });
       }
     });

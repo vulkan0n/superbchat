@@ -65,8 +65,6 @@ export default {
           showAmount: defaultShowAmount.value,
         };
 
-        console.log(data);
-
         const response = await axios.post("/settings", data, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -75,17 +73,16 @@ export default {
         });
 
         if (response.statusText == "OK") {
-          console.log(response);
           isValidUpdate.value = true;
           setTimeout(() => {
             isValidUpdate.value = false;
           }, 3000);
         } else {
-          console.log(response);
+          console.error(response);
           router.push("/login");
         }
       } catch (err) {
-        console.log(err);
+        console.error(err);
         router.push("/login");
       }
     }

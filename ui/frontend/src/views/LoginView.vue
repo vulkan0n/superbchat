@@ -40,7 +40,7 @@ export default {
           router.push("/dashboard");
         }
       } catch (err) {
-        console.log(err);
+        console.error(err);
         credentialsError.value = true;
       } finally {
         setTimeout(() => {
