@@ -16,8 +16,10 @@ import (
 )
 
 type PostCredentialsBody struct {
-	Username string `json:"user"`
-	Password string `json:"pass"`
+	Username   string `json:"user"`
+	Password   string `json:"pass"`
+	Address    string `json:"address"`
+	TknAddress string `json:"tknAddress"`
 }
 
 func (app *application) postUserSignup(c echo.Context) error {
@@ -28,15 +30,17 @@ func (app *application) postUserSignup(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Body Request"})
 	}
 	n := PostCredentialsBody{
-		Username: "default",
-		Password: "default",
+		Username:   "default",
+		Password:   "default",
+		Address:    "default",
+		TknAddress: "default",
 	}
 	err = json.Unmarshal(b, &n)
 	if err != nil {
 		fmt.Println(err)
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
 	}
-	err = app.accounts.Insert(n.Username, n.Password)
+	err = app.accounts.Insert(n.Username, n.Password, n.Address, n.TknAddress)
 	if err != nil {
 		if errors.Is(err, models.ErrDuplicateUser) {
 			app.errorLog.Println(err)

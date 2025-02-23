@@ -2,6 +2,7 @@
 import { onMounted, ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import axios from "axios";
+import { Wallet } from "mainnet-js";
 
 export default {
   setup() {
@@ -13,16 +14,43 @@ export default {
     const msgMaxChar = ref(300);
 
     const minDonationLowError = ref(false);
+    const invalidAddressError = ref(false);
+    const invalidTknAddressError = ref(false);
+
     const errorClass = ref("border-red-500");
     const isValidUpdate = ref(false);
 
     const router = useRouter();
 
-    function verifyAndUpdateSettings() {
+    async function isValidAddress(address) {
+      try {
+        await Wallet.watchOnly(address);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    async function verifyAndUpdateSettings() {
       minDonationLowError.value = minDonation.value < 0.00000547;
 
-      if (!minDonationLowError.value) {
-        postSettings();
+      invalidAddressError.value = !(await isValidAddress(address.value));
+
+      invalidTknAddressError.value =
+        tknEnabled.value &&
+        (tknAddress.value === "" ||
+          !(
+            tknAddress.value.startsWith("bitcoincash:z") ||
+            tknAddress.value.startsWith("z")
+          ) ||
+          !(await isValidAddress(tknAddress.value)));
+
+      if (
+        !minDonationLowError.value &&
+        !invalidAddressError.value &&
+        !invalidTknAddressError.value
+      ) {
+        await postSettings();
       }
     }
 
@@ -94,6 +122,8 @@ export default {
       errorClass,
       verifyAndUpdateSettings,
       isValidUpdate,
+      invalidAddressError,
+      invalidTknAddressError,
     };
   },
 };
@@ -116,13 +146,17 @@ export default {
               </label>
               <input
                 class="shadow appearance-none border rounded w-80 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                :class="invalidAddressError ? errorClass : ''"
                 id="address"
                 type="text"
                 placeholder="bitcoincash:"
                 v-model="address"
               />
+              <p v-if="invalidAddressError" class="text-red-500 text-xs italic">
+                Please choose a valid BCH address.
+              </p>
             </div>
-            <div class="mb-4">
+            <div class="mb-4" v-if="tknEnabled">
               <label
                 class="block text-gray-700 text-sm font-bold mb-2"
                 for="address"
@@ -131,11 +165,15 @@ export default {
               </label>
               <input
                 class="shadow appearance-none border rounded w-80 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                :class="invalidTknAddressError ? errorClass : ''"
                 id="tknAddress"
                 type="text"
                 placeholder="bitcoincash:"
                 v-model="tknAddress"
               />
+              <p v-if="invalidTknAddressError" class="text-red-500 text-xs italic">
+                Please choose a valid CashTokens address.
+              </p>
             </div>
             <div class="mb-4">
               <label
@@ -153,7 +191,7 @@ export default {
                 v-model="minDonation"
               />
               <p v-if="minDonationLowError" class="text-red-500 text-xs italic">
-                Minimun donation amount must be higher than 0.00000546.
+                Minimun donation amount must be higher than 0.00000546
               </p>
             </div>
             <div class="mb-4">

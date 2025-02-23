@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import axios from "axios";
+import { Wallet } from "mainnet-js";
 
 const invalidUsernames = [
   "user-signup",
@@ -29,6 +30,8 @@ export default {
     const username = ref("");
     const password = ref("");
     const repeatedPassword = ref("");
+    const address = ref("");
+    const tknAddress = ref("");
 
     const emptyPasswordError = ref(false);
     const emptyUserError = ref(false);
@@ -36,17 +39,38 @@ export default {
     const differentPasswordError = ref(false);
     const usernameTakenError = ref(false);
     const usernameInvalidError = ref(false);
+    const invalidAddressError = ref(false);
+    const invalidTknAddressError = ref(false);
+
     const isLoading = ref(false);
 
     const errorClass = ref("border-red-500");
 
     const router = useRouter();
 
-    function verifyAndSignUp() {
+    async function isValidAddress(address) {
+      try {
+        await Wallet.watchOnly(address);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    async function verifyAndSignUp() {
       emptyUserError.value = username.value == "";
       emptyPasswordError.value = password.value == "";
       shortPasswordError.value = password.value.length < 8;
       differentPasswordError.value = password.value != repeatedPassword.value;
+
+      invalidAddressError.value = !(await isValidAddress(address.value));
+      invalidTknAddressError.value =
+        tknAddress.value !== "" &&
+        (!(
+          tknAddress.value.startsWith("bitcoincash:z") ||
+          tknAddress.value.startsWith("z")
+        ) ||
+          !(await isValidAddress(tknAddress.value)));
 
       if (invalidUsernames.includes(username.value)) {
         usernameTakenError.value = true;
@@ -68,9 +92,11 @@ export default {
         !shortPasswordError.value &&
         !differentPasswordError.value &&
         !usernameTakenError.value &&
-        !usernameInvalidError.value
+        !usernameInvalidError.value &&
+        !invalidAddressError.value &&
+        !invalidTknAddressError.value
       ) {
-        postUserSignUp();
+        await postUserSignUp();
       }
     }
 
@@ -81,6 +107,8 @@ export default {
         const response = await axios.post("/user-signup", {
           user: username.value,
           pass: password.value,
+          address: address.value,
+          tknAddress: tknAddress.value,
         });
 
         if (response.statusText == "OK") {
@@ -97,19 +125,19 @@ export default {
               localStorage.setItem("userId", userId);
             }
           } catch (err) {
-            console.log(err);
+            console.error(err);
           } finally {
             router.push("/dashboard");
           }
         } else {
-          console.log(response);
+          console.error(response);
           usernameTakenError.value = true;
           setTimeout(() => {
             usernameTakenError.value = false;
           }, 3000);
         }
       } catch (err) {
-        console.log(err);
+        console.error(err);
         usernameTakenError.value = true;
         setTimeout(() => {
           usernameTakenError.value = false;
@@ -133,6 +161,10 @@ export default {
       errorClass,
       verifyAndSignUp,
       isLoading,
+      address,
+      tknAddress,
+      invalidAddressError,
+      invalidTknAddressError,
     };
   },
 };
@@ -171,7 +203,10 @@ export default {
               <p v-if="usernameTakenError" class="text-red-500 text-xs italic">
                 This username is already in use.
               </p>
-              <p v-if="usernameInvalidError" class="text-red-500 text-xs italic">
+              <p
+                v-if="usernameInvalidError"
+                class="text-red-500 text-xs italic"
+              >
                 This username is invalid.
               </p>
             </div>
@@ -221,7 +256,47 @@ export default {
                 Password does not match.
               </p>
             </div>
-
+            <div class="mb-4">
+              <label
+                class="block text-gray-700 text-sm font-bold mb-2"
+                for="address"
+              >
+                Wallet Address
+              </label>
+              <input
+                class="shadow appearance-none border rounded w-80 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                :class="invalidAddressError ? errorClass : ''"
+                id="address"
+                type="text"
+                placeholder="bitcoincash:q..."
+                v-model="address"
+              />
+              <p v-if="invalidAddressError" class="text-red-500 text-xs italic">
+                Please choose a valid BCH address.
+              </p>
+            </div>
+            <div class="mb-4">
+              <label
+                class="block text-gray-700 text-sm font-bold mb-2"
+                for="tknAddress"
+              >
+                CashTokens Address (Optional)
+              </label>
+              <input
+                class="shadow appearance-none border rounded w-80 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                :class="invalidTknAddressError ? errorClass : ''"
+                id="tknAddress"
+                type="text"
+                placeholder="bitcoincash:z..."
+                v-model="tknAddress"
+              />
+              <p
+                v-if="invalidTknAddressError"
+                class="text-red-500 text-xs italic"
+              >
+                Please choose a valid CashToken address.
+              </p>
+            </div>
             <div class="flex items-center justify-between">
               <button
                 class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"

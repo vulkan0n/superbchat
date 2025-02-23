@@ -43,8 +43,11 @@ type AccountModel struct {
 	DB *sql.DB
 }
 
-func (m *AccountModel) Insert(username, password string) error {
+func (m *AccountModel) Insert(username, password, address, tknAddress string) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+
+	tknEnabled := tknAddress != ""
+
 	stmt := `INSERT INTO account (
   username,
   password,
@@ -55,8 +58,8 @@ func (m *AccountModel) Insert(username, password string) error {
   min_donation,
   show_amount,
   created)
-VALUES($1, $2, '', true, '', 300, 0.00000547, true, CURRENT_TIMESTAMP)`
-	_, err = m.DB.Exec(stmt, username, string(hashedPassword))
+VALUES($1, $2, $3, $4, $5, 300, 0.00000547, true, CURRENT_TIMESTAMP)`
+	_, err = m.DB.Exec(stmt, username, string(hashedPassword), address, tknEnabled, tknAddress)
 	if err != nil {
 		var posgreSQLError *pq.Error
 		if errors.As(err, &posgreSQLError) {
