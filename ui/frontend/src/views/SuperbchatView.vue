@@ -52,7 +52,6 @@ export default {
     let tknSymbol;
     let tknLogo;
 
-
     async function awaitDontationBCH() {
       if (donationAmount.value < minDonation.value) {
         donationLowError.value = true;
@@ -76,6 +75,30 @@ export default {
       }
     }
 
+    async function fetchTokenInfo(categoryId) {
+      const url = `https://bcmr.paytaca.com/api/tokens/${categoryId}/`;
+
+      try {
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch token info: ${response.status}`);
+        }
+        const data = await response.json();
+
+        const info = {
+          icon: data.uris?.icon || null,
+          symbol: data.token?.symbol || null,
+          decimals: data.token?.decimals ?? null,
+        };
+
+        return info;
+      } catch (error) {
+        console.error("Error fetching token info:", error);
+        return null;
+      }
+    }
+
     async function awaitDontationTKN() {
       waitingForTx.value = true;
       tknSymbol = "";
@@ -84,18 +107,14 @@ export default {
       const cancelWatch = tknWallet.watchAddressTransactions(async (tx) => {
         txId = tx.txid;
         tknCategoryId = tx.vout[0].tokenData.category;
-        try {
-          await BCMR.addMetadataRegistryAuthChain({
-            transactionHash: tknCategoryId,
-          });
-          const info = BCMR.getTokenInfo(tknCategoryId);
-          tknSymbol = info.token.symbol;
-          tknLogo = info.uris.icon;
+
+        const info = await fetchTokenInfo(tknCategoryId);
+        if (info) {
+          tknSymbol = info.symbol;
+          tknLogo = info.icon;
           const rawAmount = parseFloat(tx.vout[0].tokenData.amount);
-          donationAmount.value = rawAmount / Math.pow(10, info.token.decimals);
-        } catch (err) {
-          console.warn("BCMR error with categoryId: " + tknCategoryId);
-          console.warn(err);
+          donationAmount.value = rawAmount / Math.pow(10, info.decimals);
+        } else {
           tknSymbol = "CASHTOKEN";
           tknLogo = "https://cashonize.com/images/tokenicon.png";
           donationAmount.value = parseFloat(tx.vout[0].tokenData.amount);
