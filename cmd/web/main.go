@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/go-playground/form/v4"
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
 	"github.com/vulkan0n/superbchat/internal/models"
@@ -22,11 +21,10 @@ type application struct {
 	accounts      *models.AccountModel
 	superchats    *models.SuperchatModel
 	templateCache map[string]*template.Template
-	formDecoder   *form.Decoder
+	wsHub         *WebSocketHub
 }
 
 func main() {
-
 	dsn := flag.String("dsn", "postgres://web:pass@localhost/superbchat?sslmode=disable", "PostgreSQL data source name")
 	flag.Parse()
 
@@ -45,8 +43,7 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
-	formDecoder := *form.NewDecoder()
-
+	wsHub := newWebSocketHub()
 	e := echo.New()
 
 	app := &application{
@@ -56,7 +53,7 @@ func main() {
 		superchats:    &models.SuperchatModel{DB: db},
 		accounts:      &models.AccountModel{DB: db},
 		templateCache: templateCache,
-		formDecoder:   &formDecoder,
+		wsHub:         wsHub,
 	}
 	app.routes()
 

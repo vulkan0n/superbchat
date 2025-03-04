@@ -355,6 +355,39 @@ func (app *application) postSuperbchat(c echo.Context) error {
 		app.infoLog.Println(err)
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
+
+	widgetId, err := app.accounts.GetWidgetIdByAccountId(n.Recipient)
+	if err != nil {
+		app.infoLog.Println(err)
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+
+	type superbchatMessage struct {
+		WidgetId string  `json:"widget_id"`
+		Name     string  `json:"name"`
+		Message  string  `json:"message"`
+		Amount   float64 `json:"amount"`
+		IsHidden bool    `json:"isHidden"`
+		IsTkn    bool    `json:"isTkn"`
+	}
+
+	msg := superbchatMessage{
+		WidgetId: widgetId,
+		Name:     n.Name,
+		Message:  n.Message,
+		Amount:   n.Amount,
+		IsHidden: n.IsHidden,
+		IsTkn:    n.IsTkn,
+	}
+
+	messageBytes, err := json.Marshal(msg)
+	if err != nil {
+		app.infoLog.Println(err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Error generating message JSON"})
+	}
+
+	app.wsHub.broadcastMessage(string(messageBytes))
+
 	return c.String(http.StatusOK, "Superbchat received")
 }
 

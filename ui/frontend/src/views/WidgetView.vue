@@ -11,23 +11,26 @@
         <img
           v-if="!alert.isTkn"
           src="../assets/bch.svg"
-          class="h-12 w-12 rounded-full"
+          class="h-24 w-24 rounded-full"
           alt="Avatar"
         /><img
           v-if="alert.isTkn"
           src="https://gist.github.com/vulkan0n/74922802a5d3a8861765e882c3a2db1a/raw/1c8b5bbcbb8fa282c672fbcebefbf4ac52bfdf34/logo.png"
-          class="h-12 w-12 rounded-full"
+          class="h-24 w-24 rounded-full"
           alt="Avatar"
         />
         <div>
           <div class="text-lg font-bold text-gray-900">
             {{ alert.username }}
           </div>
-          <div class="text-sm text-gray-600">donated</div>
-          <div v-if="alert.showAmount" class="text-2xl font-bold text-green-600">
+          <div class="text-base text-gray-600">donated</div>
+          <div
+            v-if="alert.showAmount"
+            class="text-2xl font-bold text-green-600"
+          >
             BCH {{ alert.amount }}
           </div>
-          <div class="text-sm text-gray-500">{{ alert.message }}</div>
+          <div class="text-lg text-gray-500">{{ alert.message }}</div>
         </div>
       </div>
     </div>
@@ -35,7 +38,8 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
+import { useRoute } from "vue-router";
 
 const alert = ref(null);
 
@@ -54,11 +58,35 @@ function triggerDonationAlert(username, amount, message, isTkn, showAmount) {
   }, 5000);
 }
 
-triggerDonationAlert("Milton", 2.5, "Let's go BCH!", true, false);
-setTimeout(() => {
-triggerDonationAlert("Rojer", 0.005, "Excelent job", false, true);
-  }, 5000);
+const widgetId = useRoute().params.uuid;
 
+let socket = null;
+const wsUrl = window.location.origin.replace(/^http/, "ws") + "/ws";
+
+const connectWebSocket = () => {
+  socket = new WebSocket(wsUrl);
+
+  socket.onmessage = (event) => {
+    const chat = JSON.parse(event.data);
+    if (chat.widget_id === widgetId) {
+      triggerDonationAlert(chat.name, chat.amount, chat.message, chat.isTkn , !chat.isHidden);
+    }
+  };
+
+  socket.onerror = (error) => {
+    console.error("WebSocket Error:", error);
+  };
+};
+
+onMounted(() => {
+  connectWebSocket();
+});
+
+onUnmounted(() => {
+  if (socket) {
+    socket.close();
+  }
+});
 </script>
 
 <style>

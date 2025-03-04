@@ -129,6 +129,19 @@ func (m *AccountModel) GetByUsername(username string) (*Account, error) {
 	return GetOneByQuery(m, stmt, username)
 }
 
+func (m *AccountModel) GetWidgetIdByAccountId(id int) (string, error) {
+	var widgetId string
+	stmt := `SELECT widget_id FROM account WHERE id = $1`
+	err := m.DB.QueryRow(stmt, id).Scan(&widgetId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", ErrNoRecord
+		}
+		return "", err
+	}
+	return widgetId, nil
+}
+
 func GetOneByQuery(m *AccountModel, stmt string, id any) (*Account, error) {
 	row := m.DB.QueryRow(stmt, id)
 

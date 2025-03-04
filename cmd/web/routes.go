@@ -22,9 +22,11 @@ func (app *application) routes() {
 	app.echo.POST("/superbchat-get", app.postSuperchatsByTkn)
 	app.echo.POST("/settings", app.postUserSettingsByTkn)
 
+	app.echo.GET("/ws", app.wsHub.handleWebSocket)
+
 	app.echo.Use(middleware.StaticWithConfig(middleware.StaticConfig{
 		Root:       "frontend/dist",
-		Index:      "index.html", // This is the default html page
+		Index:      "index.html",
 		Browse:     false,
 		HTML5:      true,
 		Filesystem: http.FS(ui.Frontend),
