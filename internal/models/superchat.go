@@ -14,11 +14,8 @@ type Superchat struct {
 	Message   string    `json:"message"`
 	Amount    float64   `json:"amount"`
 	TknSymbol string    `json:"tknSymbol"`
-	TknAmount float64   `json:"tknAmount"`
 	IsHidden  bool      `json:"isHidden"`
 	Recipient int       `json:"recipient"`
-	IsPaid    bool      `json:"isPaid"`
-	IsAlerted bool      `json:"isAlerted"`
 	Created   time.Time `json:"created"`
 }
 
@@ -32,19 +29,16 @@ const superchatColumns = `
   message,
   amount,
   tkn_symbol,
-  tkn_amount,
   hidden,
   account_id,
-  paid,
-  alerted,
   created
 `
 
 func (m *SuperchatModel) Insert(txId string, name string, message string, amount float64, tknSymbol string,
-	tknAmount float64, isHidden bool, recipient int) (int, error) {
+	isHidden bool, recipient int) (int, error) {
 	stmt := fmt.Sprintf(`INSERT INTO superchat (%s)
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP) RETURNING id`, superchatColumns)
-	res := m.DB.QueryRow(stmt, txId, name, message, amount, tknSymbol, tknAmount, isHidden, recipient, false, false)
+    VALUES($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP) RETURNING id`, superchatColumns)
+	res := m.DB.QueryRow(stmt, txId, name, message, amount, tknSymbol, isHidden, recipient)
 
 	var id int
 	err := res.Scan(&id)
@@ -83,11 +77,8 @@ func scanSuperchat(row *sql.Row) (*Superchat, error) {
 		&s.Message,
 		&s.Amount,
 		&s.TknSymbol,
-		&s.TknAmount,
 		&s.IsHidden,
 		&s.Recipient,
-		&s.IsPaid,
-		&s.IsAlerted,
 		&s.Created,
 	)
 	if err != nil {
@@ -124,11 +115,8 @@ func (m *SuperchatModel) GetFromAccount(accountId int) ([]*Superchat, error) {
 			&s.Message,
 			&s.Amount,
 			&s.TknSymbol,
-			&s.TknAmount,
 			&s.IsHidden,
 			&s.Recipient,
-			&s.IsPaid,
-			&s.IsAlerted,
 			&s.Created,
 		)
 		if err != nil {

@@ -1,22 +1,28 @@
 <script>
+import QRCodeVue3 from "qrcode-vue3";
 import { useRouter, useRoute } from "vue-router";
 import { onMounted, ref } from "vue";
+import { Wallet, BCMR } from "mainnet-js";
 import axios from "axios";
 
 const walletAddress = ref();
 const tknEnabled = ref(true);
-const cashAddress = ref();
+const tknAddress = ref();
 const isValidUser = ref(true);
 const minDonation = ref(0.00000547);
 const donationAmount = ref(0.00000547);
 const msgMaxChar = ref(300);
 const showAmount = ref(true);
+const waitingForTx = ref(false);
+let wallet;
+let tknWallet;
 
 export default {
+  components: { QRCodeVue3 },
   setup() {
     const donatorName = ref("Anonymous");
     const donationMessage = ref("");
-    const isCashAddrs = ref(false);
+    const isTknAddrs = ref(false);
     var userId = 0;
     const isValidSend = ref(false);
 
@@ -34,6 +40,17 @@ export default {
     const user = useRoute().params.user;
 
     async function verifyAndPay() {
+      if (!isTknAddrs.value) {
+        await awaitDontationBCH();
+      } else {
+        await awaitDontationTKN();
+      }
+    }
+
+    let txId;
+    let tknCategoryId;
+
+    async function awaitDontationBCH() {
       if (donationAmount.value < minDonation.value) {
         donationLowError.value = true;
         setTimeout(() => {
@@ -41,35 +58,74 @@ export default {
         }, 3000);
       }
       if (!donationLowError.value) {
-        try {
-          const superbchatResponse = await axios.post("/superbchat", {
-            name: donatorName.value,
-            message: donationMessage.value,
-            amount: donationAmount.value,
-            isHidden: !showAmount.value,
-            recipient: userId,
-            isTkn: isCashAddrs.value,
-          });
-          if (superbchatResponse.statusText == "OK") {
-            console.log("Superchat Sent");
-            isValidSend.value = true;
-            setTimeout(() => {
-              isValidSend.value = false;
-            }, 3000);
+        waitingForTx.value = true;
+        wallet.watchAddressTransactions(async (tx) => {
+          if (tx.vout[0].value == donationAmount.value) {
+            txId = tx.txid;
+            tknCategoryId = "";
+            waitingForTx.value = false;
+            await sendSuperbchat();
           }
+        });
+      }
+    }
+
+    async function awaitDontationTKN() {
+      waitingForTx.value = true;
+      tknWallet.watchAddressTransactions(async (tx) => {
+        console.log("TKN transaction:", tx);
+        txId = tx.txid;
+        tknCategoryId = tx.vout[0].tokenData.category;
+        /*try {
+          let tknCategoryId = tx.vout[0].tokenData.category;
+          await BCMR.addMetadataRegistryAuthChain({
+            transactionHash: tknCategoryId,
+          });
         } catch (err) {
           console.log(err);
-        } finally {
+        }
+        const info = BCMR.getTokenInfo(tx.vout[0].tokenData.category);
+        console.log(info);*/
+        waitingForTx.value = false;
+        donationAmount.value = parseFloat(tx.vout[0].tokenData.amount);
+        sendSuperbchat();
+      });
+    }
+
+    async function sendSuperbchat() {
+      try {
+        let postBody = {
+          txId: txId,
+          name: donatorName.value,
+          message: donationMessage.value,
+          amount: donationAmount.value,
+          tknSymbol: tknCategoryId,
+          isHidden: !showAmount.value,
+          recipient: userId,
+          isTkn: isTknAddrs.value,
+        };
+        console.log(postBody);
+        const superbchatResponse = await axios.post("/superbchat", postBody);
+        if (superbchatResponse.status === 200) {
+          console.log("Superchat Sent");
+          isValidSend.value = true;
+          donationMessage.value = "";
           setTimeout(() => {
-            router.push(route.fullPath);
+            isValidSend.value = false;
           }, 3000);
         }
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setTimeout(() => {
+          router.push(route.fullPath);
+        }, 3000);
       }
     }
 
     function onQRChange() {
-      const currentVal = isCashAddrs.value;
-      isCashAddrs.value = !currentVal;
+      const currentVal = isTknAddrs.value;
+      isTknAddrs.value = !currentVal;
     }
 
     onMounted(async () => {
@@ -78,7 +134,7 @@ export default {
         if (userInfoResponse.statusText == "OK") {
           walletAddress.value = userInfoResponse.data.address;
           tknEnabled.value = userInfoResponse.data.tknsEnabled;
-          cashAddress.value = userInfoResponse.data.tknAddress;
+          tknAddress.value = userInfoResponse.data.tknAddress;
           showAmount.value = userInfoResponse.data.showAmount;
           minDonation.value = userInfoResponse.data.minDonation;
           donationAmount.value = userInfoResponse.data.minDonation;
@@ -91,6 +147,14 @@ export default {
       } catch (err) {
         router.push({ name: "404" });
         isValidUser.value = false;
+      }
+      if (walletAddress.value) {
+        wallet = await Wallet.watchOnly(walletAddress.value);
+        console.log("BCH Wallet:", wallet);
+      }
+      if (tknEnabled.value && tknAddress.value) {
+        tknWallet = await Wallet.watchOnly(tknAddress.value);
+        console.log("TKN Wallet:", tknWallet);
       }
     });
 
@@ -107,13 +171,14 @@ export default {
       walletAddress,
       isValidUser,
       verifyAndPay,
-      isCashAddrs,
-      cashAddress,
+      isTknAddrs,
+      tknAddress,
       onQRChange,
       tknEnabled,
       minDonation,
       msgMaxChar,
       isValidSend,
+      waitingForTx,
     };
   },
 };
@@ -148,7 +213,7 @@ export default {
                 v-model="donatorName"
               />
             </div>
-            <div v-if="!isCashAddrs" class="mb-4">
+            <div v-if="!isTknAddrs" class="mb-4">
               <label
                 class="block text-gray-700 text-sm font-bold mb-2"
                 for="donationAmount"
@@ -198,7 +263,7 @@ export default {
               <li class="me-2">
                 <a
                   aria-current="page"
-                  :class="isCashAddrs ? unselectedTabClass : selectedTabClass"
+                  :class="isTknAddrs ? unselectedTabClass : selectedTabClass"
                   @click="onQRChange"
                   >Address</a
                 >
@@ -206,36 +271,80 @@ export default {
               <div v-if="tknEnabled">
                 <li class="me-2">
                   <a
-                    :class="isCashAddrs ? selectedTabClass : unselectedTabClass"
+                    :class="isTknAddrs ? selectedTabClass : unselectedTabClass"
                     @click="onQRChange"
-                    >Cash Address</a
+                    >Token Address</a
                   >
                 </li>
               </div>
             </ul>
 
-            <div class="w-80" v-show="isValidUser">
+            <div
+              class="w-80"
+              v-show="isValidUser"
+              :class="waitingForTx ? 'blur-none' : 'blur-sm'"
+            >
               <span class="text-xs">{{
-                !isCashAddrs ? walletAddress : cashAddress
+                !isTknAddrs ? walletAddress : tknAddress
               }}</span>
-              <qr-code
-                id="qr-bch"
-                :contents="!isCashAddrs ? walletAddress : cashAddress"
-                module-color="#1c7d43"
-                position-ring-color="#13532d"
-                position-center-color="#70c559"
-                style="background-color: #fff"
-                class="qr"
-              />
+              <div class="m-4">
+                <QRCodeVue3
+                  :value="
+                    !isTknAddrs
+                      ? walletAddress + '?amount=' + donationAmount
+                      : tknAddress
+                  "
+                  :key="
+                    !isTknAddrs
+                      ? walletAddress + '?amount=' + donationAmount
+                      : tknAddress
+                  "
+                  :dots-options="{ type: 'dots', color: '#1c7d43' }"
+                  :corners-square-options="{
+                    type: 'extra-rounded',
+                    color: '#13532d',
+                  }"
+                  :corners-dot-options="{
+                    type: 'dot',
+                    color: '#70c559',
+                  }"
+                />
+              </div>
             </div>
             <div class="flex items-center justify-between">
               <button
                 class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                 type="button"
                 @click="verifyAndPay"
+                :disabled="waitingForTx"
               >
-                Send Donation!
+                {{
+                  !waitingForTx
+                    ? "Prepare donation"
+                    : "Waiting for transaction..."
+                }}
               </button>
+              <div v-if="waitingForTx" class="ml-2">
+                <svg
+                  class="animate-spin h-5 w-5 text-green-600"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 2v4"></path>
+                  <path d="M12 18v4"></path>
+                  <path d="M4.93 4.93l2.83 2.83"></path>
+                  <path d="M16.24 16.24l2.83 2.83"></path>
+                  <path d="M2 12h4"></path>
+                  <path d="M18 12h4"></path>
+                  <path d="M4.93 19.07l2.83-2.83"></path>
+                  <path d="M16.24 7.76l2.83-2.83"></path>
+                </svg>
+              </div>
               <p v-if="isValidSend" class="text-emerald-700 text-xs italic">
                 Message Sent!
               </p>

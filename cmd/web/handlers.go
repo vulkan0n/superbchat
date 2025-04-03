@@ -321,9 +321,11 @@ func (app *application) getUserInfoByName(c echo.Context) error {
 }
 
 type postSuperbchatBody struct {
+	TxId      string  `json:"txId"`
 	Name      string  `json:"name"`
 	Message   string  `json:"message"`
 	Amount    float64 `json:"amount"`
+	TknSymbol string  `json:"tknSymbol"`
 	IsHidden  bool    `json:"isHidden"`
 	Recipient int     `json:"recipient"`
 	IsTkn     bool    `json:"isTkn"`
@@ -337,9 +339,11 @@ func (app *application) postSuperbchat(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid Body Request"})
 	}
 	n := postSuperbchatBody{
+		TxId:      "default",
 		Name:      "default",
 		Message:   "default",
 		Amount:    0,
+		TknSymbol: "default",
 		IsHidden:  false,
 		Recipient: 0,
 		IsTkn:     false,
@@ -349,7 +353,7 @@ func (app *application) postSuperbchat(c echo.Context) error {
 		fmt.Println(err)
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid JSON"})
 	}
-	_, err = app.superchats.Insert("", n.Name, n.Message, n.Amount, "", 0, n.IsHidden, n.Recipient)
+	_, err = app.superchats.Insert(n.TxId, n.Name, n.Message, n.Amount, n.TknSymbol, n.IsHidden, n.Recipient)
 
 	if err != nil {
 		app.infoLog.Println(err)

@@ -8,11 +8,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@bitjson/qr-code": "^1.0.2",
     "autoprefixer": "^10",
     "axios": "^1.7.5",
     "mainnet-js": "^2.3.10",
     "postcss": "^8",
+    "qrcode-vue3": "^1.7.1",
     "tailwindcss": "^3",
     "vue": "^3.4.15",
     "vue-router": "^4.2.5"
