@@ -64,8 +64,7 @@ export default {
         />
         <span
           class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white"
-          >Superbchat</span
-        >
+        >Super<span class="text-emerald-500 transition-all duration-300 hover:font-bold hover:scale-110 inline-block">bch</span>at</span>
       </div>
       <div class="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
         <RouterLink
