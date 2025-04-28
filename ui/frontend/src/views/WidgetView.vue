@@ -1,30 +1,32 @@
 <template>
   <div
-    class="bg-white fixed inset-0 flex items-center justify-center pointer-events-none"
+    class="bg-transparent fixed inset-0 flex items-center justify-center pointer-events-none"
   >
     <!-- Donation Alert -->
     <div
       v-if="alert"
-      class="p-6 bg-white rounded-lg shadow-xl border-l-8 border-green-500 animate-pop-in"
+      class="p-5 bg-white rounded-lg shadow-xl border-l-8 border-green-500 animate-pop-in max-w-md w-full"
     >
       <div class="flex items-center space-x-4">
         <img
           :src="alert.isTkn ? alert.tknLogo : bchLogo"
-          class="h-24 w-24 rounded-full"
+          class="h-24 w-24 rounded-full object-cover"
           alt="Avatar"
         />
-        <div>
-          <div class="text-lg font-bold text-gray-900">
+        <div class="space-y-1">
+          <div class="text-2xl font-bold text-gray-900 leading-tight">
             {{ alert.username }}
           </div>
-          <div class="text-base text-gray-600">donated</div>
+          <div class="text-base text-gray-700 leading-tight">donated</div>
           <div
             v-if="alert.showAmount"
-            class="text-2xl font-bold text-green-600"
+            class="text-3xl font-extrabold text-green-600 leading-tight"
           >
             {{ alert.amount }} {{ alert.tknSymbol }}
           </div>
-          <div class="text-lg text-gray-500">{{ alert.message }}</div>
+          <div class="text-lg text-gray-800 mt-2 leading-snug">
+            {{ alert.message }}
+          </div>
         </div>
       </div>
     </div>
