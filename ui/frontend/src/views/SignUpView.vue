@@ -111,14 +111,14 @@ export default {
           tknAddress: tknAddress.value,
         });
 
-        if (response.statusText == "OK") {
+        if (response.status === 200) {
           isLoading.value = true;
           try {
             const loginResponse = await axios.post("/user-login", {
               user: username.value,
               pass: password.value,
             });
-            if (loginResponse.statusText == "OK") {
+            if (loginResponse.status === 200) {
               const token = loginResponse.data.token;
               const userId = loginResponse.data.userId;
               localStorage.setItem("token", token);

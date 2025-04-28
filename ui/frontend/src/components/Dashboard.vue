@@ -58,7 +58,7 @@ export default {
         const superchatsResponse = await axios.post("/superbchat-get", {
           token,
         });
-        if (superchatsResponse.statusText == "OK") {
+        if (superchatsResponse.status == 200) {
           Messages.value = superchatsResponse.data;
         } else {
           console.error(superchatsResponse);

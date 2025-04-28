@@ -25,7 +25,7 @@ export default {
           "/user-id/" + localStorage.getItem("userId")
         );
 
-        if (userInfoResponse.statusText == "OK") {
+        if (userInfoResponse.status === 200) {
           userName.value = userInfoResponse.data.username;
           widgetId.value = userInfoResponse.data.widgetId;
         } else {

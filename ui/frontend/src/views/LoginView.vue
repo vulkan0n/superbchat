@@ -32,7 +32,7 @@ export default {
           user: username.value,
           pass: password.value,
         });
-        if (loginResponse.statusText == "OK") {
+        if (loginResponse.status === 200) {
           const token = loginResponse.data.token;
           const userId = loginResponse.data.userId;
           localStorage.setItem("token", token);

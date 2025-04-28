@@ -164,7 +164,7 @@ export default {
     onMounted(async () => {
       try {
         const userInfoResponse = await axios.get("/user/" + user);
-        if (userInfoResponse.statusText == "OK") {
+        if (userInfoResponse.status === 200) {
           walletAddress.value = userInfoResponse.data.address;
           tknEnabled.value = userInfoResponse.data.tknsEnabled;
           tknAddress.value = userInfoResponse.data.tknAddress;

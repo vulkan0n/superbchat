@@ -72,7 +72,7 @@ export default {
           },
         });
 
-        if (response.statusText == "OK") {
+        if (response.status == 200) {
           isValidUpdate.value = true;
           setTimeout(() => {
             isValidUpdate.value = false;
@@ -92,7 +92,7 @@ export default {
         const settingsInfoResponse = await axios.get(
           "/user-id/" + localStorage.getItem("userId")
         );
-        if (settingsInfoResponse.statusText == "OK") {
+        if (settingsInfoResponse.status == 200) {
           address.value = settingsInfoResponse.data.address;
           tknEnabled.value = settingsInfoResponse.data.tknsEnabled;
           tknAddress.value = settingsInfoResponse.data.tknAddress;
