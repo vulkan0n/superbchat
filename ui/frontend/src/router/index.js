@@ -36,6 +36,11 @@ const router = createRouter({
       component: () => import("../views/SuperbchatView.vue"),
     },
     {
+      path: "/alert/:uuid",
+      name: "widget",
+      component: () => import("../views/WidgetView.vue"),
+    },
+    {
       path: "/404",
       name: "404",
       component: () => import("../views/404View.vue"),
